@@ -5,7 +5,7 @@ import { useDay } from '@/hooks/useDay'
 import { useShows } from '@/hooks/useShows'
 import ShowCard from '@/components/ShowCard'
 import type { Show } from '@/lib/types'
-import { Pencil, Calendar, User } from 'lucide-react'
+import { Pencil, Calendar, Clock, User } from 'lucide-react'
 import { getTodayIST, getYesterdayIST } from '@/lib/utils'
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
@@ -52,6 +52,7 @@ export default function DayPage() {
   // Form fields
   const [showDate, setShowDate] = useState(getTodayIST())
   const [dateFocus, setDateFocus] = useState(false)
+  const [timeFocus, setTimeFocus] = useState(false)
   const [startTime, setStartTime] = useState('')
   const [movieName, setMovieName] = useState('')
   const [language, setLanguage] = useState('Kannada')
@@ -471,11 +472,30 @@ export default function DayPage() {
 
               {/* Start Time */}
               <div>
-                <ModalLabel>Start Time *</ModalLabel>
-                <DarkInput
-                  id="start-time" type="time" value={startTime}
-                  onChange={e => setStartTime(e.target.value)} required
-                />
+                <ModalLabel>Start time *</ModalLabel>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10, height: 52, padding: '0 14px',
+                  background: timeFocus ? 'var(--input-bg-focus)' : 'var(--input-bg)',
+                  border: `1.5px solid ${timeFocus ? 'var(--accent)' : 'var(--input-border)'}`,
+                  borderRadius: 'var(--r-input)',
+                  boxShadow: timeFocus ? '0 0 0 4px var(--accent-ring)' : 'none',
+                  transition: 'border-color .18s, box-shadow .18s',
+                }}>
+                  <Clock size={19} color={timeFocus ? 'var(--accent)' : 'var(--muted)'} strokeWidth={1.8} />
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={e => setStartTime(e.target.value)}
+                    onFocus={() => setTimeFocus(true)}
+                    onBlur={() => setTimeFocus(false)}
+                    required
+                    style={{
+                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                      color: 'var(--text)', fontSize: 16, fontFamily: 'var(--mono)',
+                      colorScheme: 'dark',
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Movie Name */}
