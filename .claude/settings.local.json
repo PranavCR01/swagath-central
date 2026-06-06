@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(gsd:plan-phase)",
+      "Bash(npm create *)",
+      "Bash(cp -r theatre-temp/. .)",
+      "Bash(rm -rf theatre-temp)",
+      "Bash(npm install *)",
+      "Bash(npx tailwindcss *)",
+      "Bash(npx shadcn@latest init --help)",
+      "Bash(npx shadcn@latest init -y)",
+      "Bash(npm uninstall *)",
+      "Bash(npx shadcn@latest add button input label card form)",
+      "PowerShell(New-Item *)",
+      "Bash(npm run *)",
+      "Bash(npx vite *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(pkill -f \"vite --port 5173\")",
+      "Bash(npx tsc *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/)",
+      "Bash(node *)",
+      "Bash(npm list *)",
+      "Bash(npx playwright *)",
+      "Skill(run)",
+      "PowerShell(Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/c\", \"cd `\"D:\\\\Python files\\\\theatre-ops`\" && npx vite --port 5173\" -WindowStyle Hidden -PassThru | Select-Object Id)"
+    ]
+  }
+}

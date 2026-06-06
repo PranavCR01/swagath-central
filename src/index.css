@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Theatre dark design tokens — scoped so they don't conflict with shadcn */
+.t {
+  --bg: #0a0a0f;
+  --surface: #16151f;
+  --surface-2: #1e1c2a;
+  --accent: #f59e0b;
+  --accent-ink: #1a1206;
+  --accent-glow: rgba(245,158,11,0.35);
+  --accent-ring: rgba(245,158,11,0.18);
+  --red: #ef4444;
+  --green: #22c55e;
+  --muted: rgba(255,255,255,0.38);
+  --text: #f1f0f5;
+  --card-border: rgba(255,255,255,0.07);
+  --input-bg: rgba(255,255,255,0.05);
+  --input-bg-focus: rgba(255,255,255,0.08);
+  --input-border: rgba(255,255,255,0.10);
+  --purple-chip: rgba(139,92,246,0.15);
+  --purple-text: rgba(167,139,250,0.9);
+  --purple-border: rgba(139,92,246,0.25);
+  --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --r-btn: 14px;
+  --r-card: 16px;
+  --r-input: 10px;
+}
+
+.t input[type="number"]::-webkit-outer-spin-button,
+.t input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
