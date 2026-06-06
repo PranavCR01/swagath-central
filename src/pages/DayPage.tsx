@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { useDay } from '@/hooks/useDay'
 import { useShows } from '@/hooks/useShows'
 import ShowCard from '@/components/ShowCard'
+import type { Show } from '@/lib/types'
+import { Pencil } from 'lucide-react'
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 
@@ -17,6 +19,7 @@ export default function DayPage() {
   const { shows, loading: showsLoading, refetch } = useShows(day?.id ?? null)
 
   const [showForm, setShowForm] = useState(false)
+  const [editingShow, setEditingShow] = useState<Show | null>(null)
   const [startTime, setStartTime] = useState('')
   const [movieName, setMovieName] = useState('')
   const [language, setLanguage] = useState('Kannada')
@@ -54,28 +57,64 @@ export default function DayPage() {
     : ''
 
   function openForm() {
+    setEditingShow(null)
     setStartTime(''); setMovieName(''); setLanguage('Kannada')
     setIsFanShow(false); setTicketCount(''); setOccupancyPct('')
     setFormError(''); setShowForm(true)
   }
 
-  async function handleAddShow(e: React.FormEvent) {
+  function openEditForm(show: Show) {
+    setEditingShow(show)
+    setStartTime(show.start_time)
+    setMovieName(show.movie_name)
+    setLanguage(show.language)
+    setIsFanShow(show.is_fan_show)
+    setTicketCount(show.ticket_count != null ? String(show.ticket_count) : '')
+    setOccupancyPct(show.occupancy_pct != null ? String(show.occupancy_pct) : '')
+    setFormError(''); setShowForm(true)
+  }
+
+  function closeSheet() {
+    setShowForm(false)
+    setEditingShow(null)
+  }
+
+  async function handleSubmitShow(e: React.FormEvent) {
     e.preventDefault()
     if (!startTime || !movieName.trim()) { setFormError('Start time and movie name are required'); return }
     setSaving(true); setFormError('')
-    const { error } = await supabase.from('theatre_shows').insert({
-      day_id: day!.id,
-      show_number: shows.length + 1,
-      start_time: startTime,
-      movie_name: movieName.trim(),
-      language,
-      is_fan_show: isFanShow,
-      ticket_count: ticketCount ? parseInt(ticketCount, 10) : null,
-      occupancy_pct: occupancyPct ? parseInt(occupancyPct, 10) : null,
-    })
-    setSaving(false)
-    if (error) { setFormError(error.message); return }
-    setShowForm(false); refetch()
+
+    if (editingShow) {
+      const { error } = await supabase
+        .from('theatre_shows')
+        .update({
+          start_time: startTime,
+          movie_name: movieName.trim(),
+          language,
+          is_fan_show: isFanShow,
+          ticket_count: ticketCount ? parseInt(ticketCount, 10) : null,
+          occupancy_pct: occupancyPct ? parseInt(occupancyPct, 10) : null,
+        })
+        .eq('id', editingShow.id)
+      setSaving(false)
+      if (error) { setFormError(error.message); return }
+    } else {
+      const { error } = await supabase.from('theatre_shows').insert({
+        day_id: day!.id,
+        show_number: shows.length + 1,
+        start_time: startTime,
+        movie_name: movieName.trim(),
+        language,
+        is_fan_show: isFanShow,
+        ticket_count: ticketCount ? parseInt(ticketCount, 10) : null,
+        occupancy_pct: occupancyPct ? parseInt(occupancyPct, 10) : null,
+      })
+      setSaving(false)
+      if (error) { setFormError(error.message); return }
+    }
+
+    closeSheet()
+    refetch()
   }
 
   if (dayLoading) {
@@ -179,18 +218,31 @@ export default function DayPage() {
           </div>
         ) : (
           shows.map((s) => (
-            <ShowCard
-              key={s.id}
-              showNumber={s.show_number}
-              startTime={s.start_time}
-              movieName={s.movie_name}
-              language={s.language}
-              isFanShow={s.is_fan_show}
-              ticketCount={s.ticket_count ?? undefined}
-              occupancyPct={s.occupancy_pct ?? undefined}
-              isComplete={s.is_complete}
-              onClick={() => navigate(`/theatre/${theatreId}/day/${date}/show/${s.id}`)}
-            />
+            <div key={s.id} style={{ position: 'relative' }}>
+              <ShowCard
+                showNumber={s.show_number}
+                startTime={s.start_time}
+                movieName={s.movie_name}
+                language={s.language}
+                isFanShow={s.is_fan_show}
+                ticketCount={s.ticket_count ?? undefined}
+                occupancyPct={s.occupancy_pct ?? undefined}
+                isComplete={s.is_complete}
+                onClick={() => navigate(`/theatre/${theatreId}/day/${date}/show/${s.id}`)}
+              />
+              <button
+                onClick={e => { e.stopPropagation(); openEditForm(s) }}
+                style={{
+                  position: 'absolute', bottom: 10, right: 10,
+                  width: 32, height: 32, borderRadius: 8,
+                  background: 'var(--surface-2)', border: '1px solid var(--card-border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', padding: 0,
+                }}
+              >
+                <Pencil size={14} color="var(--muted)" />
+              </button>
+            </div>
           ))
         )}
       </div>
@@ -240,12 +292,12 @@ export default function DayPage() {
         )}
       </div>
 
-      {/* Add Show modal */}
+      {/* Add / Edit Show sheet */}
       {showForm && (
         <>
           <div
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40 }}
-            onClick={() => setShowForm(false)}
+            onClick={closeSheet}
           />
           <div style={{
             position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
@@ -259,9 +311,11 @@ export default function DayPage() {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--card-border)', margin: '0 auto 20px' }} />
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>Add Show</h2>
+              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
+                {editingShow ? 'Edit Show' : 'Add Show'}
+              </h2>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={closeSheet}
                 style={{
                   width: 32, height: 32, borderRadius: 8,
                   background: 'var(--surface)', border: '1px solid var(--card-border)',
@@ -276,12 +330,12 @@ export default function DayPage() {
               </button>
             </div>
 
-            <form onSubmit={handleAddShow} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form onSubmit={handleSubmitShow} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
                 <div style={{ width: 56, flexShrink: 0 }}>
                   <ModalLabel>Show #</ModalLabel>
                   <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)', marginTop: 6 }}>
-                    {shows.length + 1}
+                    {editingShow ? editingShow.show_number : shows.length + 1}
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -381,7 +435,9 @@ export default function DayPage() {
                   boxShadow: '0 6px 22px -8px var(--accent-glow)',
                 }}
               >
-                {saving ? 'Saving…' : 'Save Show'}
+                {editingShow
+                  ? (saving ? 'Updating…' : 'Update Show')
+                  : (saving ? 'Saving…' : 'Save Show')}
               </button>
             </form>
           </div>

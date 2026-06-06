@@ -792,7 +792,7 @@ export default function ShowPage() {
 
             {/* Gap indicator */}
             {parkingGap !== null && (
-              <div style={{ marginBottom: 8 }}>
+              <div style={{ marginTop: 12, marginBottom: 8 }}>
                 {parkingGap === 0 && (
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,

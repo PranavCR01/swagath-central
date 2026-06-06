@@ -79,7 +79,7 @@ export default function HomePage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img src={swagathMark} alt="" style={{ width: 26, height: 26, objectFit: 'contain' }} />
-          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Theatre Ops</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Swagath Central</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
