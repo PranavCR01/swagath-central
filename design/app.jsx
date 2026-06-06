@@ -33,6 +33,7 @@ function App() {
   const [data, setData] = useState(() => TOPS.buildSeed());
   const [nav, setNav] = useState({ screen: 'login' });
   const [tab, setTab] = useState('main');
+  const [sheet, setSheet] = useState(null);   // null | 'addShow'
 
   // ── accent ink lookup ──
   const accentInk = useMemo(() => {
@@ -76,13 +77,14 @@ function App() {
     });
   };
 
-  const addShow = () => {
+  const addShow = (form) => {
     setData(d => {
       const ths = d.theatres[nav.theatreId];
       const n = ths.shows.length + 1;
       const newShow = {
-        id: nav.theatreId + '_' + Date.now(), n, time: 'New show', movie: ths.shows[0].movie, lang: ths.shows[0].lang,
-        occ: 0, status: 'pending',
+        id: nav.theatreId + '_' + Date.now(), n,
+        time: form.time, date: form.date, dateLabel: form.dateLabel, movie: form.movie, lang: form.lang, fan: form.fan,
+        tickets: form.tickets, occ: form.occ, status: 'pending',
         payments: { upi: '', cash: '' },
         counters: { main: TOPS.emptyRows(TOPS.MENU.main), popcorn: TOPS.emptyRows(TOPS.MENU.popcorn), cool: TOPS.emptyRows(TOPS.MENU.cool) },
         parking: { scooter: '', auto: '', car: '', reported: '' },
@@ -113,11 +115,17 @@ function App() {
             {t.grain && <div className="grain" />}
             <div key={nav.screen + (nav.showId || '')} className="screen-anim" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               {nav.screen === 'login' && <LoginScreen onSignIn={() => go('home')} />}
-              {nav.screen === 'home' && <HomeScreen data={data} onOpen={id => go('day', { theatreId: id })} onLogout={() => go('login')} />}
-              {nav.screen === 'day' && theatre && <DayScreen theatre={theatre} onBack={() => go('home')} onOpenShow={openShow} onAddShow={addShow} onClose={() => go('close', { theatreId: nav.theatreId })} />}
+              {nav.screen === 'home' && <HomeScreen data={data} onOpen={id => go('day', { theatreId: id })} onLogout={() => go('login')} onInsights={() => go('insights')} />}
+              {nav.screen === 'insights' && <InsightsScreen data={data} onBack={() => go('home')} />}
+              {nav.screen === 'day' && theatre && <DayScreen theatre={theatre} onBack={() => go('home')} onOpenShow={openShow} onAddShow={() => setSheet('addShow')} onClose={() => go('close', { theatreId: nav.theatreId })} />}
               {nav.screen === 'show' && show && <ShowEntryScreen theatre={theatre} show={show} tab={tab} setTab={setTab} setField={setShowField} onBack={() => go('day', { theatreId: nav.theatreId })} />}
               {nav.screen === 'close' && theatre && <DayCloseScreen theatre={theatre} close={data.dayClose[nav.theatreId]} setClose={setClose} onBack={() => go('day', { theatreId: nav.theatreId })} />}
             </div>
+            {sheet === 'addShow' && theatre && (
+              <AddShowSheet theatre={theatre} nextN={theatre.shows.length + 1}
+                onClose={() => setSheet(null)}
+                onSave={(form) => { addShow(form); setSheet(null); }} />
+            )}
           </DeviceFrame>
         </div>
       </div>

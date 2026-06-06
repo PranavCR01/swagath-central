@@ -41,6 +41,7 @@ export interface Theatre {
   id: string
   name: string
   created_at: string
+  capacity?: number
 }
 
 export interface Day {
@@ -54,10 +55,14 @@ export interface Show {
   id: string
   day_id: string
   show_number: number
+  show_date?: string
   start_time: string
   movie_name: string
   language: string
   is_fan_show: boolean
+  box_tickets?: number
+  gold_tickets?: number
+  silver_tickets?: number
   ticket_count: number | null
   occupancy_pct: number | null
   created_at: string

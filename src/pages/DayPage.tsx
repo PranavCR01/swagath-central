@@ -5,11 +5,25 @@ import { useDay } from '@/hooks/useDay'
 import { useShows } from '@/hooks/useShows'
 import ShowCard from '@/components/ShowCard'
 import type { Show } from '@/lib/types'
-import { Pencil } from 'lucide-react'
+import { Pencil, Calendar, User } from 'lucide-react'
+import { getTodayIST, getYesterdayIST } from '@/lib/utils'
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 
 const LANGUAGES = ['Kannada', 'Hindi', 'Tamil', 'Telugu', 'English', 'Other']
+
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function formatShowDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  const today = getTodayIST()
+  const yesterday = getYesterdayIST()
+  const tag = iso === today ? 'Today' : iso === yesterday ? 'Yesterday' : null
+  const base = `${DOW[dt.getDay()]}, ${d} ${MON[m - 1]} ${y}`
+  return tag ? `${tag} · ${base}` : base
+}
 
 export default function DayPage() {
   const { theatreId, date } = useParams<{ theatreId: string; date: string }>()
@@ -18,16 +32,40 @@ export default function DayPage() {
   const { day, theatreName, loading: dayLoading, error: dayError } = useDay(theatreId!, date!)
   const { shows, loading: showsLoading, refetch } = useShows(day?.id ?? null)
 
+  // Theatre capacity
+  const [capacity, setCapacity] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!theatreId) return
+    supabase
+      .from('theatre_theatres')
+      .select('capacity')
+      .eq('id', theatreId)
+      .single()
+      .then(({ data }) => { if (data?.capacity != null) setCapacity(data.capacity) })
+  }, [theatreId])
+
+  // Sheet open/edit state
   const [showForm, setShowForm] = useState(false)
   const [editingShow, setEditingShow] = useState<Show | null>(null)
+
+  // Form fields
+  const [showDate, setShowDate] = useState(getTodayIST())
+  const [dateFocus, setDateFocus] = useState(false)
   const [startTime, setStartTime] = useState('')
   const [movieName, setMovieName] = useState('')
   const [language, setLanguage] = useState('Kannada')
   const [isFanShow, setIsFanShow] = useState(false)
-  const [ticketCount, setTicketCount] = useState('')
-  const [occupancyPct, setOccupancyPct] = useState('')
+  const [boxTickets, setBoxTickets] = useState('')
+  const [goldTickets, setGoldTickets] = useState('')
+  const [silverTickets, setSilverTickets] = useState('')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+
+  // Derived ticket values (not state)
+  const totalTickets = (Number(boxTickets) || 0) + (Number(goldTickets) || 0) + (Number(silverTickets) || 0)
+  const occupancyDisplay = capacity ? (totalTickets / capacity * 100).toFixed(1) + '%' : '0.0%'
+
   const [runningTotal, setRunningTotal] = useState<number | null>(null)
 
   useEffect(() => {
@@ -58,19 +96,23 @@ export default function DayPage() {
 
   function openForm() {
     setEditingShow(null)
+    setShowDate(getTodayIST())
     setStartTime(''); setMovieName(''); setLanguage('Kannada')
-    setIsFanShow(false); setTicketCount(''); setOccupancyPct('')
+    setIsFanShow(false)
+    setBoxTickets(''); setGoldTickets(''); setSilverTickets('')
     setFormError(''); setShowForm(true)
   }
 
   function openEditForm(show: Show) {
     setEditingShow(show)
+    setShowDate(show.show_date ?? getTodayIST())
     setStartTime(show.start_time)
     setMovieName(show.movie_name)
     setLanguage(show.language)
     setIsFanShow(show.is_fan_show)
-    setTicketCount(show.ticket_count != null ? String(show.ticket_count) : '')
-    setOccupancyPct(show.occupancy_pct != null ? String(show.occupancy_pct) : '')
+    setBoxTickets(show.box_tickets != null ? String(show.box_tickets) : '')
+    setGoldTickets(show.gold_tickets != null ? String(show.gold_tickets) : '')
+    setSilverTickets(show.silver_tickets != null ? String(show.silver_tickets) : '')
     setFormError(''); setShowForm(true)
   }
 
@@ -84,17 +126,23 @@ export default function DayPage() {
     if (!startTime || !movieName.trim()) { setFormError('Start time and movie name are required'); return }
     setSaving(true); setFormError('')
 
+    const ticketPayload = {
+      show_date: showDate,
+      start_time: startTime,
+      movie_name: movieName.trim(),
+      language,
+      is_fan_show: isFanShow,
+      box_tickets: Number(boxTickets) || 0,
+      gold_tickets: Number(goldTickets) || 0,
+      silver_tickets: Number(silverTickets) || 0,
+      ticket_count: totalTickets || null,
+      occupancy_pct: capacity ? Math.round((totalTickets / capacity) * 100) : null,
+    }
+
     if (editingShow) {
       const { error } = await supabase
         .from('theatre_shows')
-        .update({
-          start_time: startTime,
-          movie_name: movieName.trim(),
-          language,
-          is_fan_show: isFanShow,
-          ticket_count: ticketCount ? parseInt(ticketCount, 10) : null,
-          occupancy_pct: occupancyPct ? parseInt(occupancyPct, 10) : null,
-        })
+        .update(ticketPayload)
         .eq('id', editingShow.id)
       setSaving(false)
       if (error) { setFormError(error.message); return }
@@ -102,12 +150,7 @@ export default function DayPage() {
       const { error } = await supabase.from('theatre_shows').insert({
         day_id: day!.id,
         show_number: shows.length + 1,
-        start_time: startTime,
-        movie_name: movieName.trim(),
-        language,
-        is_fan_show: isFanShow,
-        ticket_count: ticketCount ? parseInt(ticketCount, 10) : null,
-        occupancy_pct: occupancyPct ? parseInt(occupancyPct, 10) : null,
+        ...ticketPayload,
       })
       setSaving(false)
       if (error) { setFormError(error.message); return }
@@ -128,7 +171,6 @@ export default function DayPage() {
     )
   }
 
-  // Loading finished but day row is null — insert failed (not a race condition)
   if (!day) {
     return (
       <div style={{
@@ -160,6 +202,9 @@ export default function DayPage() {
       </div>
     )
   }
+
+  const todayIST = getTodayIST()
+  const yesterdayIST = getYesterdayIST()
 
   return (
     <div style={{
@@ -230,6 +275,22 @@ export default function DayPage() {
                 isComplete={s.is_complete}
                 onClick={() => navigate(`/theatre/${theatreId}/day/${date}/show/${s.id}`)}
               />
+              {/* Back-dated badge */}
+              {s.show_date && s.show_date !== todayIST && (
+                <div style={{
+                  position: 'absolute', bottom: 10, left: 12,
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '3px 8px', borderRadius: 999,
+                  fontSize: 10, fontWeight: 600,
+                  background: 'var(--purple-chip)', color: 'var(--purple-text)',
+                  border: '1px solid var(--purple-border)',
+                  pointerEvents: 'none',
+                }}>
+                  <Calendar size={10} color="var(--purple-text)" />
+                  {s.show_date === yesterdayIST ? 'Yesterday' : 'Back-dated'}
+                </div>
+              )}
+              {/* Edit button */}
               <button
                 onClick={e => { e.stopPropagation(); openEditForm(s) }}
                 style={{
@@ -331,6 +392,7 @@ export default function DayPage() {
             </div>
 
             <form onSubmit={handleSubmitShow} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Show # */}
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
                 <div style={{ width: 56, flexShrink: 0 }}>
                   <ModalLabel>Show #</ModalLabel>
@@ -338,15 +400,85 @@ export default function DayPage() {
                     {editingShow ? editingShow.show_number : shows.length + 1}
                   </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <ModalLabel>Start Time *</ModalLabel>
-                  <DarkInput
-                    id="start-time" type="time" value={startTime}
-                    onChange={e => setStartTime(e.target.value)} required
-                  />
-                </div>
               </div>
 
+              {/* Show date */}
+              <div>
+                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8, fontWeight: 500 }}>Show date</div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  {[
+                    { id: todayIST, label: 'Today' },
+                    { id: yesterdayIST, label: 'Yesterday' },
+                  ].map(c => {
+                    const on = showDate === c.id
+                    return (
+                      <button
+                        key={c.id} type="button" onClick={() => setShowDate(c.id)}
+                        style={{
+                          height: 38, padding: '0 16px', borderRadius: 999,
+                          cursor: 'pointer', fontFamily: 'inherit',
+                          fontSize: 13.5, fontWeight: on ? 650 : 500,
+                          background: on ? 'var(--accent)' : 'var(--input-bg)',
+                          color: on ? 'var(--accent-ink)' : 'var(--muted)',
+                          border: `1.5px solid ${on ? 'transparent' : 'var(--input-border)'}`,
+                          boxShadow: on ? '0 4px 14px -4px var(--accent-glow)' : 'none',
+                          transition: 'all .18s',
+                        }}
+                      >
+                        {c.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                {/* Date picker */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10, height: 52, padding: '0 14px',
+                  background: 'var(--input-bg)', borderRadius: 'var(--r-input)',
+                  border: `1.5px solid ${dateFocus ? 'var(--accent)' : 'var(--input-border)'}`,
+                  boxShadow: dateFocus ? '0 0 0 4px var(--accent-ring)' : 'none',
+                  transition: 'border-color .18s, box-shadow .18s',
+                  boxSizing: 'border-box',
+                }}>
+                  <Calendar size={19} color={dateFocus ? 'var(--accent)' : 'var(--muted)'} />
+                  <input
+                    type="date"
+                    value={showDate}
+                    max={todayIST}
+                    onChange={e => setShowDate(e.target.value)}
+                    onFocus={() => setDateFocus(true)}
+                    onBlur={() => setDateFocus(false)}
+                    style={{
+                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                      color: 'var(--text)', fontSize: 16, fontFamily: 'var(--mono)',
+                      colorScheme: 'dark', minWidth: 0,
+                    }}
+                  />
+                </div>
+                {/* Back-dated indicator */}
+                {showDate !== todayIST && (
+                  <div style={{
+                    fontSize: 12, color: 'var(--purple-text)', marginTop: 8,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                      stroke="var(--purple-text)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
+                    </svg>
+                    Back-dated entry · {formatShowDate(showDate)}
+                  </div>
+                )}
+              </div>
+
+              {/* Start Time */}
+              <div>
+                <ModalLabel>Start Time *</ModalLabel>
+                <DarkInput
+                  id="start-time" type="time" value={startTime}
+                  onChange={e => setStartTime(e.target.value)} required
+                />
+              </div>
+
+              {/* Movie Name */}
               <div>
                 <ModalLabel>Movie Name *</ModalLabel>
                 <DarkInput
@@ -356,6 +488,7 @@ export default function DayPage() {
                 />
               </div>
 
+              {/* Language */}
               <div>
                 <ModalLabel>Language</ModalLabel>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
@@ -379,6 +512,7 @@ export default function DayPage() {
                 </div>
               </div>
 
+              {/* Fan Show */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
                 <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>Fan Show</span>
                 <button
@@ -399,21 +533,32 @@ export default function DayPage() {
                 </button>
               </div>
 
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <ModalLabel>Tickets</ModalLabel>
-                  <DarkInput
-                    id="tickets" type="text" inputMode="numeric" value={ticketCount}
-                    placeholder="0" onChange={e => setTicketCount(e.target.value.replace(/\D/g, ''))}
-                  />
+              {/* Tickets & Occupancy */}
+              <div>
+                <div style={{
+                  fontSize: 11, color: 'var(--muted)', fontWeight: 600,
+                  letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 12,
+                }}>
+                  Tickets &amp; Occupancy
                 </div>
-                <div style={{ flex: 1 }}>
-                  <ModalLabel>Occupancy %</ModalLabel>
-                  <DarkInput
-                    id="occ" type="text" inputMode="numeric" value={occupancyPct}
-                    placeholder="0–100" onChange={e => setOccupancyPct(e.target.value.replace(/\D/g, ''))}
-                  />
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <TicketInput label="Box" value={boxTickets} onChange={setBoxTickets} />
+                  <TicketInput label="Gold" value={goldTickets} onChange={setGoldTickets} />
+                  <TicketInput label="Silver" value={silverTickets} onChange={setSilverTickets} />
                 </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                  <ComputedStat label="Total tickets" value={inrFmt.format(totalTickets)} />
+                  <ComputedStat label="Occupancy" value={occupancyDisplay} />
+                </div>
+                {capacity != null && (
+                  <div style={{
+                    fontSize: 11, color: 'var(--muted)', opacity: 0.65, marginTop: 10,
+                    display: 'flex', alignItems: 'center', gap: 5,
+                  }}>
+                    <User size={12} color="var(--muted)" />
+                    {theatreName} · {inrFmt.format(capacity)} seats
+                  </div>
+                )}
               </div>
 
               {formError && (
@@ -477,5 +622,51 @@ function DarkInput({ id, type, value, onChange, placeholder, required, inputMode
         transition: 'border-color .15s, box-shadow .15s',
       }}
     />
+  )
+}
+
+function TicketInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [focus, setFocus] = useState(false)
+  return (
+    <label style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, letterSpacing: '.03em', textAlign: 'center' }}>
+        {label}
+      </span>
+      <input
+        inputMode="numeric"
+        value={value}
+        placeholder="0"
+        onChange={e => onChange(e.target.value.replace(/[^\d]/g, ''))}
+        onFocus={e => { setFocus(true); e.target.select() }}
+        onBlur={() => setFocus(false)}
+        style={{
+          width: '100%', height: 52, textAlign: 'center', boxSizing: 'border-box',
+          background: focus ? 'var(--input-bg-focus)' : 'var(--input-bg)',
+          border: `1.5px solid ${focus ? 'var(--accent)' : 'var(--input-border)'}`,
+          borderRadius: 'var(--r-input)', color: 'var(--text)',
+          fontFamily: 'var(--mono)', fontSize: 18, fontWeight: 600, outline: 'none',
+          boxShadow: focus ? '0 0 0 4px var(--accent-ring)' : 'none',
+          transition: 'border-color .15s, box-shadow .15s',
+        }}
+      />
+    </label>
+  )
+}
+
+function ComputedStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      flex: 1, padding: '12px 16px',
+      background: 'var(--input-bg)', border: '1px solid var(--card-border)',
+      borderRadius: 'var(--r-input)',
+    }}>
+      <div style={{ fontSize: 12.5, color: 'var(--muted)', fontWeight: 500 }}>{label}</div>
+      <div style={{
+        fontFamily: 'var(--mono)', fontSize: 26, fontWeight: 600, color: 'var(--accent)',
+        textShadow: '0 0 18px var(--accent-glow)', marginTop: 3, lineHeight: 1,
+      }}>
+        {value}
+      </div>
+    </div>
   )
 }

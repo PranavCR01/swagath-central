@@ -68,12 +68,15 @@ function TheatreCard({ t, onOpen }) {
   );
 }
 
-function HomeScreen({ data, onOpen, onLogout }) {
+function HomeScreen({ data, onOpen, onLogout, onInsights }) {
   return (
     <>
       <AppHeader
         title={<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Mark size={26} /><span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Theatre Ops</span></div>}
-        right={<button onClick={onLogout} style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Icon name="logout" size={19} color="var(--muted)" /></button>}
+        right={<div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onInsights} style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Icon name="chart" size={19} color="var(--muted)" /></button>
+          <button onClick={onLogout} style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Icon name="logout" size={19} color="var(--muted)" /></button>
+        </div>}
       />
       <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
         <div style={{ marginBottom: 18 }}>
@@ -83,10 +86,14 @@ function HomeScreen({ data, onOpen, onLogout }) {
         <div className="home-grid" style={{ display: 'grid', gap: 16 }}>
           {Object.values(data.theatres).map(t => <TheatreCard key={t.id} t={t} onOpen={() => onOpen(t.id)} />)}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+        <div onClick={onInsights} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
           <SummaryStat label="Combined revenue" value={rupee(Object.values(data.theatres).reduce((s, t) => s + TOPS.theatreRevenue(t), 0))} icon="coins" />
           <SummaryStat label="Shows logged today" value={Object.values(data.theatres).reduce((s, t) => s + TOPS.showsToday(t), 0)} icon="reel" />
         </div>
+        <button onClick={onInsights} className="t-card-tap" style={{ width: '100%', marginTop: 12, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'var(--purple-chip)', border: '1px solid var(--purple-border)', borderRadius: 'var(--r-btn)', color: 'var(--purple-text)', fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+          <Icon name="chart" size={18} color="var(--purple-text)" />View Insights &amp; Suggestions
+          <Icon name="chevron" size={16} color="var(--purple-text)" />
+        </button>
       </div>
     </>
   );
@@ -117,6 +124,7 @@ function ShowRow({ show, onOpen }) {
             <span style={{ fontFamily: 'var(--mono)' }}>{show.time}</span>
             <span style={{ fontSize: 11.5, color: 'var(--purple-text)', background: 'var(--purple-chip)', padding: '1px 7px', borderRadius: 6, fontWeight: 600 }}>{show.lang}</span>
             {show.status !== 'pending' && <span style={{ color: occColor(show.occ), fontWeight: 600 }}>{show.occ}%</span>}
+            {show.date && show.date !== '2026-06-03' && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--purple-text)', background: 'var(--purple-chip)', padding: '1px 7px', borderRadius: 6, fontWeight: 600 }}><Icon name="calendar" size={11} color="var(--purple-text)" />{show.dateLabel ? show.dateLabel.replace(/ · .*$/, '') : 'Back-dated'}</span>}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>

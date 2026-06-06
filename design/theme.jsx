@@ -200,8 +200,8 @@ function buildSeed() {
 
   return {
     theatres: {
-      sandhya: { id: 'sandhya', name: 'Sandhya', city: 'Gandhi Bazaar, Bengaluru', shows: sandhyaShows },
-      manasa:  { id: 'manasa',  name: 'Manasa',  city: 'Jayanagar, Bengaluru',     shows: manasaShows },
+      sandhya: { id: 'sandhya', name: 'Sandhya', city: 'Gandhi Bazaar, Bengaluru', capacity: 714, shows: sandhyaShows },
+      manasa:  { id: 'manasa',  name: 'Manasa',  city: 'Jayanagar, Bengaluru',     capacity: 524, shows: manasaShows },
     },
     dayClose: {
       sandhya: {
