@@ -19,7 +19,7 @@ export function calcParkingExpected(
   autoCount: number,
   carCount: number
 ): number {
-  return scooterCount * 20 + autoCount * 40 + carCount * 80
+  return scooterCount * 20 + autoCount * 30 + carCount * 50
 }
 
 // Parking gap: positive = staff owe money, negative = overpaid

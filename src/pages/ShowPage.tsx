@@ -11,19 +11,20 @@ import type { Show, TabRows, MainCounterRow, PopcornRow, CoolDrinksRow, ParkingR
 
 // ── Item catalogues ───────────────────────────────────────────────
 const MAIN_ITEMS = [
-  { id: 'vegpuff',  name: 'Veg Puff',     price: PRICES.veg_puff },
-  { id: 'eggpuff',  name: 'Egg Puff',     price: PRICES.egg_puff },
-  { id: 'samosa',   name: 'Samosa',       price: PRICES.samosa },
-  { id: 'cknpuff',  name: 'Ckn Puff',     price: PRICES.ckn_puff },
-  { id: 'hcake',    name: 'H. Cake',      price: PRICES.h_cake },
-  { id: 'jambun',   name: 'Jam Bun',      price: PRICES.jam_bun },
-  { id: 'chips',    name: 'Chips',        price: PRICES.chips },
-  { id: 'frymes',   name: 'Frymes',       price: PRICES.frymes },
-  { id: 'kettle',   name: 'Kettle Chips', price: PRICES.kettle_chips },
-  { id: 'water',    name: 'Water',        price: PRICES.water },
-  { id: 'mshake',   name: 'Milkshake',    price: PRICES.milkshake },
-  { id: 'frooty',   name: 'Frooty',       price: PRICES.frooty },
-  { id: 'tin',      name: 'Tin',          price: PRICES.tin },
+  { id: 'vegpuff',  name: 'Veg Puff',   price: PRICES.veg_puff  },
+  { id: 'eggpuff',  name: 'Egg Puff',   price: PRICES.egg_puff  },
+  { id: 'hcake',    name: 'Honey Cake', price: PRICES.h_cake    },
+  { id: 'jambun',   name: 'Jam Bun',    price: PRICES.jam_bun   },
+  { id: 'cknpuff',  name: 'C Puff',     price: PRICES.ckn_puff  },
+  { id: 'bs',       name: 'BS',         price: PRICES.bs        },
+  { id: 'samosa',   name: 'Samosa',     price: PRICES.samosa    },
+  { id: 'tin',      name: 'Tins',       price: PRICES.tin       },
+  { id: 'frooty',   name: 'Frooty',     price: PRICES.frooty    },
+  { id: 'chips',    name: 'Chips',      price: PRICES.chips     },
+  { id: 'frymes',   name: 'Frymes',     price: PRICES.frymes    },
+  { id: 'water',    name: 'Water',      price: PRICES.water     },
+  { id: 'mshake',   name: 'Milkshake',  price: PRICES.milkshake },
+  { id: 'lays',     name: 'Lays',       price: PRICES.lays      },
 ]
 
 const POPCORN_ITEMS = [
@@ -32,39 +33,60 @@ const POPCORN_ITEMS = [
   { id: 'cone_l', name: 'Cone L', price: PRICES.cone_200 },
 ]
 
-const CD_DRINKS = [
-  { id: 'c_water',  name: 'Water',              price: PRICES.cd_water },
-  { id: 'c_tin',    name: 'Tin',                price: PRICES.cd_tin },
-  { id: 'c_frooty', name: 'Frooty / Tropicana', price: PRICES.frooty_trop },
-  { id: 'c_mshake', name: 'Milkshake',          price: PRICES.cd_milkshake },
+const CD_ALL = [
+  { id: 'c_water',   name: 'Water',         price: PRICES.cd_water,     section: 'drinks' },
+  { id: 'c_tin',     name: 'Tins 1',        price: PRICES.cd_tin,       section: 'drinks' },
+  { id: 'c_tin2',    name: 'Tins 2',        price: PRICES.cd_tin2,      section: 'drinks' },
+  { id: 'c_frooty',  name: 'Frooty',        price: PRICES.frooty_trop,  section: 'drinks' },
+  { id: 'c_mshake',  name: 'Milkshake',     price: PRICES.cd_milkshake, section: 'drinks' },
+  { id: 'c_fries',   name: 'French Fries',  price: PRICES.french_fries, section: 'live'   },
+  { id: 'c_vbites',  name: 'Veg Bites',     price: PRICES.veg_bites,    section: 'live'   },
+  { id: 'c_osam',    name: 'Onion Samosa',  price: PRICES.onion_samosa, section: 'live'   },
+  { id: 'c_cpop',    name: 'Ckn Popcorn',   price: PRICES.ckn_popcorn,  section: 'live'   },
+  { id: 'c_csam',    name: 'Ckn Samosa',    price: PRICES.ckn_samosa,   section: 'live'   },
+  { id: 'c_cnug',    name: 'Ckn Nuggets',   price: PRICES.ckn_nuggets,  section: 'live'   },
+  { id: 'c_ice1',    name: 'Ice Cream 1',   price: PRICES.ice_cream1,   section: 'live'   },
+  { id: 'c_ice2',    name: 'Ice Cream 2',   price: PRICES.ice_cream2,   section: 'live'   },
+  { id: 'c_ice3',    name: 'Ice Cream 3',   price: PRICES.ice_cream3,   section: 'live'   },
+  { id: 'c_tcoffee', name: 'Tea / Coffee',  price: PRICES.tea_coffee,   section: 'live'   },
 ]
-
-const CD_LIVE = [
-  { id: 'c_fries', name: 'French Fries',  price: PRICES.french_fries },
-  { id: 'c_vbites', name: 'Veg Bites',   price: PRICES.veg_bites },
-  { id: 'c_osam',  name: 'Onion Samosa', price: PRICES.onion_samosa },
-  { id: 'c_cpop',  name: 'Ckn Popcorn',  price: PRICES.ckn_popcorn },
-  { id: 'c_csam',  name: 'Ckn Samosa',   price: PRICES.ckn_samosa },
-  { id: 'c_cnug',  name: 'Ckn Nuggets',  price: PRICES.ckn_nuggets },
-  { id: 'c_sand',  name: 'Sandwich',     price: PRICES.sandwich },
-]
-
-const CD_ALL = [...CD_DRINKS, ...CD_LIVE]
 
 // ── item.id → DB column prefix ────────────────────────────────────
 const MC_DB_KEY: Record<string, string> = {
-  vegpuff: 'veg_puff', eggpuff: 'egg_puff', samosa: 'samosa',
-  cknpuff: 'ckn_puff', hcake: 'h_cake', jambun: 'jam_bun',
-  chips: 'chips', frymes: 'frymes', kettle: 'kettle_chips',
-  water: 'water', mshake: 'milkshake', frooty: 'frooty', tin: 'tin',
+  vegpuff: 'veg_puff',
+  eggpuff: 'egg_puff',
+  hcake:   'h_cake',
+  jambun:  'jam_bun',
+  cknpuff: 'ckn_puff',
+  bs:      'bs',
+  samosa:  'samosa',
+  tin:     'tin',
+  frooty:  'frooty',
+  chips:   'chips',
+  frymes:  'frymes',
+  water:   'water',
+  mshake:  'milkshake',
+  lays:    'lays',
 }
 const PC_DB_KEY: Record<string, string> = {
   cone_s: 'cone_60', cone_m: 'cone_130', cone_l: 'cone_200',
 }
 const CD_DB_KEY: Record<string, string> = {
-  c_water: 'water', c_tin: 'tin', c_frooty: 'frooty_trop', c_mshake: 'milkshake',
-  c_fries: 'french_fries', c_vbites: 'veg_bites', c_osam: 'onion_samosa',
-  c_cpop: 'ckn_popcorn', c_csam: 'ckn_samosa', c_cnug: 'ckn_nuggets', c_sand: 'sandwich',
+  c_water:   'water',
+  c_tin:     'tin',
+  c_tin2:    'tins2',
+  c_frooty:  'frooty_trop',
+  c_mshake:  'milkshake',
+  c_fries:   'french_fries',
+  c_vbites:  'veg_bites',
+  c_osam:    'onion_samosa',
+  c_cpop:    'ckn_popcorn',
+  c_csam:    'ckn_samosa',
+  c_cnug:    'ckn_nuggets',
+  c_ice1:    'ice_cream1',
+  c_ice2:    'ice_cream2',
+  c_ice3:    'ice_cream3',
+  c_tcoffee: 'tea_coffee',
 }
 
 const TABS = [
@@ -839,7 +861,7 @@ export default function ShowPage() {
         {activeTab === 'cool' && (
           <>
             <ColHeaders />
-            {CD_DRINKS.map(item => (
+            {CD_ALL.filter(i => i.section === 'drinks').map(item => (
               <SlipRow
                 key={item.id}
                 label={item.name}
@@ -856,7 +878,7 @@ export default function ShowPage() {
 
             <SectionDivider label="Live Counter" />
 
-            {CD_LIVE.map(item => (
+            {CD_ALL.filter(i => i.section === 'live').map(item => (
               <SlipRow
                 key={item.id}
                 label={item.name}
