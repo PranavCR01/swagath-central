@@ -65,7 +65,8 @@ export default function DayPage() {
 
   // Derived ticket values (not state)
   const totalTickets = (Number(boxTickets) || 0) + (Number(goldTickets) || 0) + (Number(silverTickets) || 0)
-  const occupancyDisplay = capacity ? (totalTickets / capacity * 100).toFixed(1) + '%' : '0.0%'
+  const occupancyPct = capacity ? (totalTickets / capacity) * 100 : 0
+  const occupancyDisplay = occupancyPct.toFixed(1) + '%'
 
   const [runningTotal, setRunningTotal] = useState<number | null>(null)
 
@@ -570,6 +571,11 @@ export default function DayPage() {
                   <ComputedStat label="Total tickets" value={inrFmt.format(totalTickets)} />
                   <ComputedStat label="Occupancy" value={occupancyDisplay} />
                 </div>
+                {occupancyPct > 100 && (
+                  <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>
+                    ⚠ Occupancy exceeds 100% — verify ticket counts
+                  </div>
+                )}
                 {capacity != null && (
                   <div style={{
                     fontSize: 11, color: 'var(--muted)', opacity: 0.65, marginTop: 10,

@@ -1,6 +1,7 @@
 // sale = ob + rec - cb
+// Negative result means CB exceeded available stock (data entry error) — not clamped so it can be surfaced.
 export function calcSale(ob: number, rec: number, cb: number): number {
-  return Math.max(0, ob + rec - cb)
+  return ob + rec - cb
 }
 
 // amount = sale × unit price

@@ -46,6 +46,7 @@ export default function SlipRow({
 }: SlipRowProps) {
   const sale = calcSale(Number(ob) || 0, Number(rec) || 0, Number(cb) || 0)
   const amount = calcAmount(sale, price)
+  const saleColor = sale < 0 ? 'var(--red)' : sale === 0 ? 'var(--text)' : 'var(--text)'
 
   return (
     <div style={{
@@ -72,7 +73,7 @@ export default function SlipRow({
 
       <div style={{
         width: 36, flexShrink: 0, textAlign: 'right',
-        fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 600, color: 'var(--text)',
+        fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 600, color: saleColor,
       }}>
         {sale === 0 ? '—' : sale}
       </div>
@@ -80,9 +81,9 @@ export default function SlipRow({
       <div style={{
         width: 64, flexShrink: 0, textAlign: 'right',
         fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 600,
-        color: amount > 0 ? 'var(--accent)' : 'var(--muted)',
+        color: sale < 0 ? 'var(--red)' : amount > 0 ? 'var(--accent)' : 'var(--muted)',
       }}>
-        {amount === 0 ? '—' : '₹' + inrFmt.format(amount)}
+        {sale < 0 ? '—' : amount === 0 ? '—' : '₹' + inrFmt.format(amount)}
       </div>
     </div>
   )

@@ -227,6 +227,8 @@ function PaymentSection({
       if (diff >= 0) onUpi(String(diff))
     }
   }
+  const paymentDiff = total - slipTotal
+
   return (
     <div style={{
       margin: '12px 0 4px',
@@ -248,6 +250,15 @@ function PaymentSection({
           {rupee(total)}
         </span>
       </div>
+      {slipTotal > 0 && paymentDiff !== 0 && (
+        <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>
+          {paymentDiff > 0
+            ? `⚠ Payment ${rupee(total)} exceeds sales ${rupee(slipTotal)}`
+            : total > 0
+              ? `⚠ Payment ${rupee(total)} is less than sales ${rupee(slipTotal)}`
+              : null}
+        </div>
+      )}
     </div>
   )
 }
