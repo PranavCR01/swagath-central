@@ -136,7 +136,7 @@ function rowsToFlat(
     out[`${k}_ob`]   = ob
     out[`${k}_rec`]  = rec
     out[`${k}_cb`]   = cb
-    out[`${k}_sale`] = calcSale(ob, rec, cb)
+    out[`${k}_sale`] = Math.max(0, calcSale(ob, rec, cb))
   }
   return out
 }
