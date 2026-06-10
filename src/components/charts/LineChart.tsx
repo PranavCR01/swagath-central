@@ -57,6 +57,10 @@ export function LineChart({ series, height = 210, yTicks = 4, showDots = true, g
     return () => ro.disconnect()
   }, [])
 
+  const uid = useMemo(() => 'lc' + Math.random().toString(36).slice(2, 7), [])
+
+  if (!series.length || !series[0]?.points?.length) return null
+
   const padL = 44, padR = 12, padT = 14, padB = 26
   const n = series[0].points.length
   const allV = series.flatMap(s => s.points.map(p => p.v))
@@ -68,7 +72,6 @@ export function LineChart({ series, height = 210, yTicks = 4, showDots = true, g
 
   const ticks = Array.from({ length: yTicks + 1 }, (_, i) => (niceMax / yTicks) * i)
   const step = Math.max(1, Math.round(n / 5))
-  const uid = useMemo(() => 'lc' + Math.random().toString(36).slice(2, 7), [])
 
   return (
     <div
@@ -121,7 +124,7 @@ export function LineChart({ series, height = 210, yTicks = 4, showDots = true, g
               <path d={area} fill={`url(#${uid}-fill-${s.id})`} />
               <path d={line} fill="none" stroke={s.color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
                 filter={glow ? `url(#${uid}-glow)` : undefined} />
-              {showDots && hover != null && (
+              {showDots && hover != null && s.points[hover] && (
                 <circle cx={x(hover)} cy={y(s.points[hover].v)} r="4" fill="var(--bg)" stroke={s.color} strokeWidth="2.4" />
               )}
             </g>
@@ -135,7 +138,7 @@ export function LineChart({ series, height = 210, yTicks = 4, showDots = true, g
       </svg>
 
       {/* hover tooltip */}
-      {hover != null && (
+      {hover != null && hover < series[0].points.length && (
         <div style={{
           position: 'absolute', top: 4,
           left: Math.min(Math.max(x(hover) - 60, 4), w - 124),
@@ -143,7 +146,7 @@ export function LineChart({ series, height = 210, yTicks = 4, showDots = true, g
           padding: '7px 10px', pointerEvents: 'none', boxShadow: '0 8px 24px rgba(0,0,0,.5)', minWidth: 96,
         }}>
           <div style={{ fontSize: 10.5, color: 'var(--muted)', fontFamily: 'var(--mono)', marginBottom: 3 }}>{series[0].points[hover].label}</div>
-          {series.map(s => (
+          {series.map(s => s.points[hover] && (
             <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5 }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color }} />
               <span style={{ color: 'var(--muted)', flex: 1 }}>{s.name}</span>

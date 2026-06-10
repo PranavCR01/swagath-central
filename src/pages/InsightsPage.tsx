@@ -270,10 +270,22 @@ export default function InsightsPage() {
 
   const revSeries: LineChartSeries[] = useMemo(() => {
     if (theatreSel === 'both') {
-      return theatres.map((t, i) => ({
+      const raw = theatres.map((t, i) => ({
         id: t.id, name: t.name, color: SERIES_COLORS[i % SERIES_COLORS.length],
-        points: revenue.filter(p => p.theatreId === t.id).map(p => ({ label: fmtDateLabel(p.date, range.days), v: p.revenue })),
+        points: revenue.filter(p => p.theatreId === t.id).map(p => ({ label: fmtDateLabel(p.date, range.days), v: p.revenue, date: p.date })),
       })).filter(s => s.points.length > 0)
+
+      if (raw.length < 2) return raw.map(s => ({ ...s, points: s.points.map(({ label, v }) => ({ label, v })) }))
+
+      // Align both series to dates present in both, so they share the same x-axis.
+      const dates0 = new Set(raw[0].points.map(p => p.date))
+      const dates1 = new Set(raw[1].points.map(p => p.date))
+      const common = [...dates0].filter(d => dates1.has(d))
+
+      return raw.map(s => ({
+        ...s,
+        points: s.points.filter(p => common.includes(p.date)).map(({ label, v }) => ({ label, v })),
+      }))
     }
     return [{
       id: theatreSel, name: singleName, color: '#f59e0b',
