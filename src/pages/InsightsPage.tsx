@@ -188,9 +188,9 @@ function CateringSection({ catering, theatreName }: { catering: CateringSuggesti
 }
 
 // ── parking gap trend ────────────────────────────────────────────────
-function ParkingGapSection({ data, theatreName }: { data: ParkingGapPoint[]; theatreName: string }) {
+function ParkingGapSection({ data, theatreName, loading }: { data: ParkingGapPoint[]; theatreName: string; loading: boolean }) {
   const hasData = data.some(p => p.gap !== 0)
-  if (data.length < 3 || !hasData) {
+  if (loading || data.length < 3 || !hasData) {
     return <InsightCard title="Parking Gap Trend" sub={`Last 30 days · ${theatreName}`}><EmptyState /></InsightCard>
   }
 
@@ -241,6 +241,7 @@ export default function InsightsPage() {
   const [parkingGap, setParkingGap] = useState<ParkingGapPoint[]>([])
   const [catering, setCatering] = useState<CateringSuggestions | null>(null)
   const [loading, setLoading] = useState(true)
+  const [revenueLoading, setRevenueLoading] = useState(true)
 
   const singleId = theatreSel === 'both' ? theatres[0]?.id : theatreSel
   const singleName = theatreSel === 'both' ? (theatres[0]?.name ?? '') : (theatres.find(t => t.id === theatreSel)?.name ?? '')
@@ -249,6 +250,9 @@ export default function InsightsPage() {
     if (theatres.length === 0) return
     let cancelled = false
     setLoading(true)
+    setRevenueLoading(true)
+    setRevenue([])       // clear stale data immediately so revSeries never mixes old/new theatreSel
+    setParkingGap([])
     const target = theatreSel === 'both' ? 'both' : theatreSel
     Promise.all([
       fetchDailyRevenue(target, range.days),
@@ -264,6 +268,7 @@ export default function InsightsPage() {
       setParkingGap(gap)
       setCatering(cater)
       setLoading(false)
+      setRevenueLoading(false)
     })
     return () => { cancelled = true }
   }, [theatreSel, range.days, singleId, theatres.length])
@@ -367,7 +372,7 @@ export default function InsightsPage() {
                 <div style={{ fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Total</div>
               </div>}
             >
-              {daysWithData < 3 ? <EmptyState /> : (
+              {revenueLoading || daysWithData < 3 ? <EmptyState /> : (
                 <>
                   <LineChart series={revSeries} height={216} />
                   {theatreSel === 'both' && (
@@ -416,7 +421,7 @@ export default function InsightsPage() {
 
           {/* Parking gap */}
           <div style={{ gridColumn: isWide ? '1 / -1' : 'auto' }}>
-            <ParkingGapSection data={parkingGap} theatreName={singleName} />
+            <ParkingGapSection data={parkingGap} theatreName={singleName} loading={revenueLoading} />
           </div>
         </div>
         <div style={{ height: 6 }} />
