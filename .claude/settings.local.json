@@ -22,7 +22,11 @@
       "Bash(npm list *)",
       "Bash(npx playwright *)",
       "Skill(run)",
-      "PowerShell(Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/c\", \"cd `\"D:\\\\Python files\\\\theatre-ops`\" && npx vite --port 5173\" -WindowStyle Hidden -PassThru | Select-Object Id)"
+      "PowerShell(Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/c\", \"cd `\"D:\\\\Python files\\\\theatre-ops`\" && npx vite --port 5173\" -WindowStyle Hidden -PassThru | Select-Object Id)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)"
     ]
   }
 }
