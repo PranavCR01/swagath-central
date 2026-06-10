@@ -10,28 +10,15 @@
  * (ts-node does not work with this project's ESM setup — use tsx)
  */
 
+import { config } from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
-import { readFileSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
 
 // ── Load .env.local ───────────────────────────────────────────────
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const envPath = join(__dirname, '..', '.env.local')
+config({ path: '.env.local' })
 
-function parseEnv(filePath: string): Record<string, string> {
-  const out: Record<string, string> = {}
-  for (const line of readFileSync(filePath, 'utf-8').split('\n')) {
-    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/)
-    if (m) out[m[1]] = m[2].trim()
-  }
-  return out
-}
-
-const env = parseEnv(envPath)
-const SUPABASE_URL = (env.VITE_SUPABASE_URL ?? '').replace(/\/rest\/v1\/?$/, '')
-const ANON_KEY     = env.VITE_SUPABASE_ANON_KEY ?? ''
-const PASSWORD     = env.THEATRE_PASSWORD ?? ''
+const SUPABASE_URL = (process.env.VITE_SUPABASE_URL ?? '').replace(/\/rest\/v1\/?$/, '')
+const ANON_KEY     = process.env.VITE_SUPABASE_ANON_KEY ?? ''
+const PASSWORD     = process.env.THEATRE_PASSWORD ?? ''
 const EMAIL        = 'chaitanya58@gmail.com'
 
 if (!SUPABASE_URL || !ANON_KEY) {

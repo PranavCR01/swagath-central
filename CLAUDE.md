@@ -109,7 +109,7 @@ src/
 | 2 | Home + Day + Show Entry (theatre cards, day view, add show form) | ✅ Complete |
 | 3 | The Three Slips (Main Counter, Popcorn + Parking, Cool Drinks) | ✅ Complete |
 | 4 | Day Close + History (expenses, B.Cash, staff wages, history view) | ✅ Complete |
-| 5 | Insights — catering predictions, trends (future, after 4-6 weeks data) | ⬜ Future |
+| 5 | Insights — revenue trends, show performance, top items, catering suggestions, parking gap trend | ✅ Complete |
 
 ---
 
@@ -135,3 +135,4 @@ src/
 - 2026-06-04 — Slice 3 — three slips, OB carry-forward, parking gap
 - 2026-06-05 — Slice 4 — day close, PDF report, expenses, history view
 - 2026-06-05 — Post-Slice 4 fixes: useDay silent insert failure + retry screen; DayClosePage show completion derived from slip maps not is_complete flag; UPI breakdown auto-populated from slip data on load; "P  Parking" label typo fixed
+- 2026-06-10 — Slice 5 — Insights dashboard, custom SVG charts, catering suggestions, seed/cleanup data scripts

@@ -83,6 +83,21 @@ export default function HomePage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
+            onClick={() => navigate('/insights')}
+            style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: 'var(--surface)', border: '1px solid var(--card-border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
+              stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 3v18h18" />
+              <path d="M7 16l4-6 4 3 5-7" />
+            </svg>
+          </button>
+          <button
             onClick={() => navigate('/history')}
             style={{
               width: 40, height: 40, borderRadius: 12,

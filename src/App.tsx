@@ -8,6 +8,7 @@ import DayPage from '@/pages/DayPage'
 import ShowPage from '@/pages/ShowPage'
 import DayClosePage from '@/pages/DayClosePage'
 import HistoryPage from '@/pages/HistoryPage'
+import InsightsPage from '@/pages/InsightsPage'
 
 function ProtectedRoute() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/theatre/:theatreId/day/:date/show/:showId" element={<ShowPage />} />
           <Route path="/theatre/:theatreId/day/:date/close" element={<DayClosePage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
         </Route>
         <Route path="*" element={<RootRedirect />} />
       </Routes>
