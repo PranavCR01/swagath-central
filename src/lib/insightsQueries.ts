@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import { PRICES, COSTS } from './prices'
 
 // ── DB column prefix -> price/cost/display-name maps ──────────────────────
-const MC_PRICE: Record<string, number> = {
+export const MC_PRICE: Record<string, number> = {
   veg_puff: PRICES.veg_puff, egg_puff: PRICES.egg_puff, h_cake: PRICES.h_cake,
   jam_bun: PRICES.jam_bun, ckn_puff: PRICES.ckn_puff, bs: PRICES.bs,
   samosa: PRICES.samosa, tin: PRICES.tin, frooty: PRICES.frooty,
@@ -16,17 +16,17 @@ const MC_COST: Record<string, number> = {
   chips: COSTS.chips, frymes: COSTS.frymes, water: COSTS.water,
   milkshake: COSTS.milkshake, lays: COSTS.lays,
 }
-const MC_NAME: Record<string, string> = {
+export const MC_NAME: Record<string, string> = {
   veg_puff: 'Veg Puff', egg_puff: 'Egg Puff', h_cake: 'Honey Cake', jam_bun: 'Jam Bun',
   ckn_puff: 'C Puff', bs: 'BS', samosa: 'Samosa', tin: 'Tins', frooty: 'Frooty',
   chips: 'Chips', frymes: 'Frymes', water: 'Water', milkshake: 'Milkshake', lays: 'Lays',
 }
 
-const PC_PRICE: Record<string, number> = { cone_60: PRICES.cone_60, cone_130: PRICES.cone_130, cone_200: PRICES.cone_200 }
+export const PC_PRICE: Record<string, number> = { cone_60: PRICES.cone_60, cone_130: PRICES.cone_130, cone_200: PRICES.cone_200 }
 const PC_COST: Record<string, number> = { cone_60: COSTS.cone_60, cone_130: COSTS.cone_130, cone_200: COSTS.cone_200 }
-const PC_NAME: Record<string, string> = { cone_60: 'Cone S', cone_130: 'Cone M', cone_200: 'Cone L' }
+export const PC_NAME: Record<string, string> = { cone_60: 'Cone S', cone_130: 'Cone M', cone_200: 'Cone L' }
 
-const CD_PRICE: Record<string, number> = {
+export const CD_PRICE: Record<string, number> = {
   water: PRICES.cd_water, tin: PRICES.cd_tin, tins2: PRICES.cd_tin2, frooty_trop: PRICES.frooty_trop,
   milkshake: PRICES.cd_milkshake, french_fries: PRICES.french_fries, veg_bites: PRICES.veg_bites,
   onion_samosa: PRICES.onion_samosa, ckn_popcorn: PRICES.ckn_popcorn, ckn_samosa: PRICES.ckn_samosa,
@@ -40,19 +40,19 @@ const CD_COST: Record<string, number> = {
   ckn_nuggets: COSTS.ckn_nuggets, ice_cream1: COSTS.ice_cream1, ice_cream2: COSTS.ice_cream2,
   ice_cream3: COSTS.ice_cream3, tea_coffee: COSTS.tea_coffee,
 }
-const CD_NAME: Record<string, string> = {
+export const CD_NAME: Record<string, string> = {
   water: 'Water (CD)', tin: 'Tins 1', tins2: 'Tins 2', frooty_trop: 'Frooty', milkshake: 'Milkshake (CD)',
   french_fries: 'French Fries', veg_bites: 'Veg Bites', onion_samosa: 'Onion Samosa', ckn_popcorn: 'Ckn Popcorn',
   ckn_samosa: 'Ckn Samosa', ckn_nuggets: 'Ckn Nuggets', ice_cream1: 'Ice Cream 1', ice_cream2: 'Ice Cream 2',
   ice_cream3: 'Ice Cream 3', tea_coffee: 'Tea/Coffee',
 }
 
-function toDateStr(d: Date): string {
+export function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
 // last `days` calendar days, ending today, ascending
-function dateRange(days: number): string[] {
+export function dateRange(days: number): string[] {
   const out: string[] = []
   const today = new Date()
   for (let i = days - 1; i >= 0; i--) {
@@ -63,7 +63,7 @@ function dateRange(days: number): string[] {
   return out
 }
 
-function sumBySale(row: Record<string, unknown> | null, priceMap: Record<string, number>): number {
+export function sumBySale(row: Record<string, unknown> | null, priceMap: Record<string, number>): number {
   if (!row) return 0
   let total = 0
   for (const prefix in priceMap) {

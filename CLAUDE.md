@@ -110,6 +110,7 @@ src/
 | 3 | The Three Slips (Main Counter, Popcorn + Parking, Cool Drinks) | ✅ Complete |
 | 4 | Day Close + History (expenses, B.Cash, staff wages, history view) | ✅ Complete |
 | 5 | Insights — revenue trends, show performance, top items, catering suggestions, parking gap trend | ✅ Complete |
+| 6 | AI Daily Summary — Groq-powered narrative, item intelligence, parking alert, catering plan | ✅ Complete |
 
 ---
 
@@ -130,9 +131,16 @@ src/
 - `npm run build` must pass before any commit
 - Keep this file under 150 lines — compact ruthlessly
 
+### Testing AI Summary
+`/api/generate-summary` is a Vercel serverless function — plain `vite dev` will 404 on
+`/api/*`. To test the Groq call locally, run `npx vercel dev` (with `GROQ_API_KEY` in
+`.env.local`), or test on the deployed Vercel URL. The before/loading states render fine
+under plain `npm run dev`.
+
 ## Session Log
 <!-- One line per session: date + what was done -->
 - 2026-06-04 — Slice 3 — three slips, OB carry-forward, parking gap
 - 2026-06-05 — Slice 4 — day close, PDF report, expenses, history view
 - 2026-06-05 — Post-Slice 4 fixes: useDay silent insert failure + retry screen; DayClosePage show completion derived from slip maps not is_complete flag; UPI breakdown auto-populated from slip data on load; "P  Parking" label typo fixed
 - 2026-06-10 — Slice 5 — Insights dashboard, custom SVG charts, catering suggestions, seed/cleanup data scripts
+- 2026-06-10 — Slice 6 — AI daily summary via Groq, Vercel serverless function

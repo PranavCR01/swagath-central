@@ -89,3 +89,64 @@
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* AI Summary — animations + responsive grid */
+.t .ai-pulse {
+  animation: ai-pulse 1.8s ease-in-out infinite;
+}
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .55; transform: scale(.88); }
+}
+
+.t .ai-float {
+  animation: ai-float 3.2s ease-in-out infinite;
+}
+@keyframes ai-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.t .ai-spin {
+  animation: ai-spin 1.4s linear infinite;
+}
+@keyframes ai-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.t .ai-line,
+.t .ai-rise {
+  animation: ai-rise .5s ease both;
+}
+@keyframes ai-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.t .ai-skel {
+  position: relative;
+  overflow: hidden;
+}
+.t .ai-skel::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  animation: ai-skel-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes ai-skel-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+.t .ai-grid {
+  grid-template-columns: 1fr;
+}
+.t .ai-grid .ai-span {
+  grid-column: 1 / -1;
+}
+@media (min-width: 768px) {
+  .t .ai-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

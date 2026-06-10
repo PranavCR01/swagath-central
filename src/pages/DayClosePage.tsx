@@ -6,6 +6,7 @@ import {
   calcParkingExpected, calcParkingGap,
 } from '@/lib/calculations'
 import jsPDF from 'jspdf'
+import { Sparkles } from 'lucide-react'
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 const toNum = (s: string) => parseFloat(s) || 0
@@ -60,6 +61,7 @@ export default function DayClosePage() {
   const [staffRows, setStaffRows] = useState<StaffRow[]>([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [isSaved, setIsSaved] = useState(false)
 
   const setUpiField = (key: keyof UpiState, val: string) => setUpi(u => ({ ...u, [key]: val }))
   const setExpField = (key: keyof ExpState, val: string) => setExp(e => ({ ...e, [key]: val }))
@@ -149,6 +151,7 @@ export default function DayClosePage() {
 
       // Pre-fill existing expenses if day was previously closed
       const e = expRes.data as Record<string, unknown> | null
+      if (e) setIsSaved(true)
       if (e) {
         setExp({
           wages: e.wages?.toString() ?? '',
@@ -223,6 +226,7 @@ export default function DayClosePage() {
     }
 
     setSaving(false)
+    setIsSaved(true)
     setToast('✓ Saved')
     setTimeout(() => setToast(''), 2500)
   }
@@ -721,9 +725,10 @@ export default function DayClosePage() {
             >
               Download Day Report
             </button>
+            {isSaved && <AiSummaryButton onClick={() => navigate(`/summary/${theatreId}/${date}`)} />}
           </div>
         ) : (
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <button
               onClick={downloadDayReport}
               style={{
@@ -734,6 +739,7 @@ export default function DayClosePage() {
             >
               Download Day Report
             </button>
+            {isSaved && <AiSummaryButton onClick={() => navigate(`/summary/${theatreId}/${date}`)} />}
           </div>
         )}
       </div>
@@ -771,6 +777,24 @@ export default function DayClosePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function AiSummaryButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        height: 52, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+        background: 'var(--purple-chip)', border: '1px solid var(--purple-border)', borderRadius: 14,
+        color: 'var(--purple-text)', cursor: 'pointer', fontFamily: 'inherit',
+      }}
+    >
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 650, fontSize: 15 }}>
+        <Sparkles size={16} />Generate AI Summary
+      </span>
+      <span style={{ fontSize: 11, color: 'var(--muted)' }}>Powered by Groq</span>
+    </button>
   )
 }
 
