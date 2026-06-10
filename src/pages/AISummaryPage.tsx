@@ -64,6 +64,11 @@ function SnapshotCard({ data }: { data: DaySummaryData }) {
           </span>
         )}
       </div>
+      {data.grossProfit > 0 && (
+        <div style={{ fontSize: 13, color: 'var(--green)', marginTop: 6 }}>
+          Gross profit {rupee(data.grossProfit)} · {data.profitMargin}% margin
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
         <div style={{ flex: 1, padding: '12px 14px', background: 'var(--input-bg)', border: '1px solid var(--card-border)', borderRadius: 13 }}>
           <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 500 }}>Best show</div>
@@ -130,6 +135,13 @@ function ItemCard({ kind, item }: { kind: 'top' | 'under'; item: ItemRev & { sug
         <span style={{ fontSize: 16, fontWeight: 700, color: tm.c }}>{tm.ch}</span>
       </div>
       <div style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{item.units} units · {rupee(item.revenue)}</div>
+      {isTop && (
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
+          {item.name} is your strongest item — leading revenue this session.
+          {item.trend === 'up' && ' Sales are trending up vs last week.'}
+          {item.trend === 'flat' && ' Sales are steady vs last week.'}
+        </div>
+      )}
       {!isTop && item.suggestion && (
         <div style={{ fontSize: 12.5, color: 'var(--purple-text)', marginTop: 10, lineHeight: 1.45, paddingTop: 10, borderTop: '1px solid var(--card-border)' }}>
           {item.suggestion}

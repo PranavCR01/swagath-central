@@ -7,6 +7,29 @@ import {
 } from '@/lib/calculations'
 import jsPDF from 'jspdf'
 import { Sparkles } from 'lucide-react'
+import { MC_PRICE, MC_COST, MC_NAME, PC_PRICE, PC_COST, PC_NAME, CD_PRICE, CD_COST, CD_NAME } from '@/lib/insightsQueries'
+
+const ITEM_MAPS = [
+  { price: MC_PRICE as Record<string, number>, cost: MC_COST as Record<string, number>, name: MC_NAME as Record<string, string> },
+  { price: PC_PRICE as Record<string, number>, cost: PC_COST as Record<string, number>, name: PC_NAME as Record<string, string> },
+  { price: CD_PRICE as Record<string, number>, cost: CD_COST as Record<string, number>, name: CD_NAME as Record<string, string> },
+]
+
+interface ItemSaleRow { name: string; units: number; revenue: number; cost: number }
+
+function itemRowsForShow(rows: (Record<string, unknown> | null)[]): ItemSaleRow[] {
+  const out: ItemSaleRow[] = []
+  ITEM_MAPS.forEach(({ price, cost, name }, i) => {
+    const row = rows[i]
+    if (!row) return
+    for (const item in price) {
+      const units = Number(row[`${item}_sale`]) || 0
+      if (units <= 0) continue
+      out.push({ name: name[item], units, revenue: units * price[item], cost: units * (cost[item] ?? 0) })
+    }
+  })
+  return out.sort((a, b) => b.revenue - a.revenue)
+}
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 const toNum = (s: string) => parseFloat(s) || 0
@@ -28,6 +51,11 @@ interface ShowSummary {
   parkingExpected: number
   parkingGap: number
   parkingMissing: boolean
+  boxTickets: number
+  goldTickets: number
+  silverTickets: number
+  ticketCount: number
+  occupancyPct: number
 }
 
 interface StaffRow { tempId: string; name: string; amount: string }
@@ -97,7 +125,7 @@ export default function DayClosePage() {
 
       const { data: shows } = await supabase
         .from('theatre_shows')
-        .select('id,show_number,start_time,movie_name')
+        .select('id,show_number,start_time,movie_name,box_tickets,gold_tickets,silver_tickets,ticket_count,occupancy_pct')
         .eq('day_id', day.id).order('show_number')
       if (!shows?.length) { setLoading(false); return }
 
@@ -139,6 +167,11 @@ export default function DayClosePage() {
           parkingExpected: expected,
           parkingGap: calcParkingGap(expected, parkingReported),
           parkingMissing: pk === undefined || pk.reported_amount === null,
+          boxTickets: s.box_tickets ?? 0,
+          goldTickets: s.gold_tickets ?? 0,
+          silverTickets: s.silver_tickets ?? 0,
+          ticketCount: s.ticket_count ?? 0,
+          occupancyPct: s.occupancy_pct ?? 0,
         }
       })
       setShowSummaries(summaries)
@@ -231,7 +264,26 @@ export default function DayClosePage() {
     setTimeout(() => setToast(''), 2500)
   }
 
-  function downloadDayReport() {
+  async function downloadDayReport() {
+    const showIds = showSummaries.map(s => s.showId)
+    const [mcRes, pcRes, cdRes] = await Promise.all([
+      supabase.from('theatre_main_counter').select('*').in('show_id', showIds.length ? showIds : ['']),
+      supabase.from('theatre_popcorn').select('*').in('show_id', showIds.length ? showIds : ['']),
+      supabase.from('theatre_cool_drinks').select('*').in('show_id', showIds.length ? showIds : ['']),
+    ])
+    const mcMap = new Map((mcRes.data ?? []).map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
+    const pcMap = new Map((pcRes.data ?? []).map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
+    const cdMap = new Map((cdRes.data ?? []).map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
+
+    // gross profit / cost of goods across all of today's shows
+    let costOfGoods = 0
+    for (const s of showSummaries) {
+      const rows = itemRowsForShow([mcMap.get(s.showId) ?? null, pcMap.get(s.showId) ?? null, cdMap.get(s.showId) ?? null])
+      costOfGoods += rows.reduce((sum, r) => sum + r.cost, 0)
+    }
+    const grossProfit = totalSales - costOfGoods
+    const profitMarginPct = totalSales > 0 ? Math.round((grossProfit / totalSales) * 100) : 0
+
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' })
     const W = 210
     const M = 14
@@ -259,8 +311,12 @@ export default function DayClosePage() {
       doc.line(M, y, W - M, y); y += 5
     }
     const sectionHdr = (title: string) => {
+      checkPage(12)
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9)
       doc.setTextColor(180, 120, 0); doc.text(title, M, y); y += 6
+    }
+    const checkPage = (needed = 10) => {
+      if (y + needed > 285) { doc.addPage(); y = 20 }
     }
 
     // Show summary
@@ -286,10 +342,34 @@ export default function DayClosePage() {
     doc.text('₹' + inrFmt.format(totalSales), cols[6], y)
     y += 10
 
+    // Ticket breakdown
+    sectionHdr('TICKET BREAKDOWN')
+    const tCols = [M, M + 10, M + 62, M + 86, M + 108, M + 130, M + 152, M + 172]
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(90, 90, 110)
+    ;['#', 'Movie', 'Time', 'Box', 'Gold', 'Silver', 'Total', 'Occ%'].forEach((h, i) => doc.text(h, tCols[i], y))
+    y += 5; rule()
+
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40)
+    for (const s of showSummaries) {
+      checkPage()
+      const total = s.ticketCount || (s.boxTickets + s.goldTickets + s.silverTickets)
+      doc.text(String(s.showNumber), tCols[0], y)
+      doc.text(s.movieName.substring(0, 20), tCols[1], y)
+      doc.text(fmtTime(s.startTime), tCols[2], y)
+      doc.text(String(s.boxTickets), tCols[3], y)
+      doc.text(String(s.goldTickets), tCols[4], y)
+      doc.text(String(s.silverTickets), tCols[5], y)
+      doc.text(String(total), tCols[6], y)
+      doc.text(`${s.occupancyPct}%`, tCols[7], y)
+      y += 6
+    }
+    y += 4
+
     // Parking summary
     sectionHdr('PARKING SUMMARY')
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(30, 30, 40)
     for (const s of showSummaries) {
+      checkPage()
       doc.text(
         `Show ${s.showNumber}  Scooter:${s.scooterCount}  Auto:${s.autoCount}  Car:${s.carCount}  ` +
         `Expected:₹${inrFmt.format(s.parkingExpected)}  Reported:₹${inrFmt.format(s.parkingReported)}  Gap:₹${inrFmt.format(s.parkingGap)}`,
@@ -298,6 +378,35 @@ export default function DayClosePage() {
       y += 6
     }
     y += 4
+
+    // Item sales
+    sectionHdr('ITEM SALES')
+    const iCols = [M, M + 60, M + 90, M + 122, M + 152, M + 178]
+    for (const s of showSummaries) {
+      const itemRows = itemRowsForShow([mcMap.get(s.showId) ?? null, pcMap.get(s.showId) ?? null, cdMap.get(s.showId) ?? null])
+      if (!itemRows.length) continue
+      checkPage(16)
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(30, 30, 40)
+      doc.text(`Show ${s.showNumber} · ${s.movieName.substring(0, 30)}`, M, y)
+      y += 5
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(90, 90, 110)
+      ;['Item', 'Units', 'Revenue', 'Cost', 'Profit', 'Margin'].forEach((h, i) => doc.text(h, iCols[i], y, i > 0 ? { align: 'right' } : undefined))
+      y += 4.5; rule()
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40)
+      for (const r of itemRows) {
+        checkPage()
+        const profit = r.revenue - r.cost
+        const margin = r.revenue > 0 ? Math.round((profit / r.revenue) * 100) : 0
+        doc.text(r.name.substring(0, 22), iCols[0], y)
+        doc.text(String(r.units), iCols[1], y, { align: 'right' })
+        doc.text('₹' + inrFmt.format(r.revenue), iCols[2], y, { align: 'right' })
+        doc.text('₹' + inrFmt.format(r.cost), iCols[3], y, { align: 'right' })
+        doc.text('₹' + inrFmt.format(profit), iCols[4], y, { align: 'right' })
+        doc.text(`${margin}%`, iCols[5], y, { align: 'right' })
+        y += 5.5
+      }
+      y += 4
+    }
 
     // Expenses
     sectionHdr('EXPENSES')
@@ -326,14 +435,19 @@ export default function DayClosePage() {
     }
 
     // Footer
+    checkPage(40)
     rule()
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 30, 40)
     doc.text('Total Sales:', M, y); doc.text('₹' + inrFmt.format(totalSales), M + 60, y); y += 7
+    doc.text('Cost of Goods:', M, y); doc.text('₹' + inrFmt.format(costOfGoods), M + 60, y); y += 7
+    doc.setTextColor(0, 150, 0)
+    doc.text('Gross Profit:', M, y); doc.text(`₹${inrFmt.format(grossProfit)}  (${profitMarginPct}%)`, M + 60, y); y += 7
+    doc.setTextColor(30, 30, 40)
     doc.text('Total Expenses:', M, y); doc.text('₹' + inrFmt.format(totalExpenses), M + 60, y); y += 7
     if (bCash > 0) doc.setTextColor(0, 150, 0)
     else if (bCash < 0) doc.setTextColor(200, 0, 0)
     else doc.setTextColor(180, 120, 0)
-    doc.text('Balance Cash:', M, y); doc.text('₹' + inrFmt.format(bCash), M + 60, y)
+    doc.text('Net Balance Cash:', M, y); doc.text('₹' + inrFmt.format(bCash), M + 60, y)
 
     doc.save(`${theatreName.replace(/\s+/g, '_')}_${date}.pdf`)
   }
