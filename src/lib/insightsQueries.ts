@@ -9,7 +9,7 @@ export const MC_PRICE: Record<string, number> = {
   chips: PRICES.chips, frymes: PRICES.frymes, water: PRICES.water,
   milkshake: PRICES.milkshake, lays: PRICES.lays,
 }
-const MC_COST: Record<string, number> = {
+export const MC_COST: Record<string, number> = {
   veg_puff: COSTS.veg_puff, egg_puff: COSTS.egg_puff, h_cake: COSTS.h_cake,
   jam_bun: COSTS.jam_bun, ckn_puff: COSTS.ckn_puff, bs: COSTS.bs,
   samosa: COSTS.samosa, tin: COSTS.tin, frooty: COSTS.frooty,
@@ -23,7 +23,7 @@ export const MC_NAME: Record<string, string> = {
 }
 
 export const PC_PRICE: Record<string, number> = { cone_60: PRICES.cone_60, cone_130: PRICES.cone_130, cone_200: PRICES.cone_200 }
-const PC_COST: Record<string, number> = { cone_60: COSTS.cone_60, cone_130: COSTS.cone_130, cone_200: COSTS.cone_200 }
+export const PC_COST: Record<string, number> = { cone_60: COSTS.cone_60, cone_130: COSTS.cone_130, cone_200: COSTS.cone_200 }
 export const PC_NAME: Record<string, string> = { cone_60: 'Cone S', cone_130: 'Cone M', cone_200: 'Cone L' }
 
 export const CD_PRICE: Record<string, number> = {
@@ -33,7 +33,7 @@ export const CD_PRICE: Record<string, number> = {
   ckn_nuggets: PRICES.ckn_nuggets, ice_cream1: PRICES.ice_cream1, ice_cream2: PRICES.ice_cream2,
   ice_cream3: PRICES.ice_cream3, tea_coffee: PRICES.tea_coffee,
 }
-const CD_COST: Record<string, number> = {
+export const CD_COST: Record<string, number> = {
   water: COSTS.cd_water, tin: COSTS.cd_tin, tins2: COSTS.cd_tin2, frooty_trop: COSTS.frooty_trop,
   milkshake: COSTS.cd_milkshake, french_fries: COSTS.french_fries, veg_bites: COSTS.veg_bites,
   onion_samosa: COSTS.onion_samosa, ckn_popcorn: COSTS.ckn_popcorn, ckn_samosa: COSTS.ckn_samosa,

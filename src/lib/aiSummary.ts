@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { calcParkingExpected, calcParkingGap, computeShowTotal, computeBCash } from './calculations'
 import {
-  MC_PRICE, MC_NAME, PC_PRICE, PC_NAME, CD_PRICE, CD_NAME,
+  MC_PRICE, MC_NAME, MC_COST, PC_PRICE, PC_NAME, PC_COST, CD_PRICE, CD_NAME, CD_COST,
   sumBySale, dateRange, toDateStr, fetchParkingGapTrend,
   fetchCateringSuggestions, type CateringSuggestions,
 } from './insightsQueries'
@@ -48,15 +48,17 @@ export interface DaySummaryData {
   expenses: number
   bCash: number
   vsYesterday: number | null
+  grossProfit: number
+  profitMargin: number
   itemIntel: ItemIntel
   catering: (CateringSuggestions & { tomorrowLabel: string }) | null
   parking: ParkingAlertData | null
 }
 
-const ALL_PRICE_MAPS: { prefix: string; price: Record<string, number>; name: Record<string, string>; table: 'mc' | 'pc' | 'cd' }[] = [
-  { prefix: 'mc', price: MC_PRICE, name: MC_NAME, table: 'mc' },
-  { prefix: 'pc', price: PC_PRICE, name: PC_NAME, table: 'pc' },
-  { prefix: 'cd', price: CD_PRICE, name: CD_NAME, table: 'cd' },
+const ALL_PRICE_MAPS: { prefix: string; price: Record<string, number>; cost: Record<string, number>; name: Record<string, string>; table: 'mc' | 'pc' | 'cd' }[] = [
+  { prefix: 'mc', price: MC_PRICE, cost: MC_COST, name: MC_NAME, table: 'mc' },
+  { prefix: 'pc', price: PC_PRICE, cost: PC_COST, name: PC_NAME, table: 'pc' },
+  { prefix: 'cd', price: CD_PRICE, cost: CD_COST, name: CD_NAME, table: 'cd' },
 ]
 
 function fmtTime(t: string): string {
@@ -178,7 +180,7 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
   let parkingExpected = 0, parkingReported = 0
   let totalSales = 0
   // per-item revenue/units across today's shows, keyed `${prefix}_${item}`
-  const todayItems = new Map<string, { name: string; units: number; revenue: number }>()
+  const todayItems = new Map<string, { name: string; units: number; revenue: number; cost: number }>()
 
   for (const s of loaded.shows) {
     const mcTotal = sumBySale(s.mc, MC_PRICE)
@@ -202,21 +204,22 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
       occ: s.occupancy, revenue: computeShowTotal(mcTotal, pcTotal, cdTotal, reported),
     })
 
-    for (const { prefix, price, name, table } of ALL_PRICE_MAPS) {
+    for (const { prefix, price, cost, name, table } of ALL_PRICE_MAPS) {
       const row = table === 'mc' ? s.mc : table === 'pc' ? s.pc : s.cd
       for (const item in price) {
         const qty = Number(row?.[`${item}_sale`]) || 0
         if (qty <= 0) continue
         const key = `${prefix}_${item}`
-        const cur = todayItems.get(key) ?? { name: name[item], units: 0, revenue: 0 }
+        const cur = todayItems.get(key) ?? { name: name[item], units: 0, revenue: 0, cost: 0 }
         cur.units += qty
         cur.revenue += qty * price[item]
+        cur.cost += qty * (cost[item] ?? 0)
         todayItems.set(key, cur)
       }
       if (table === 'pc') {
         const bms = Number(s.pc?.bms_combo_amount) || 0
         if (bms > 0) {
-          const cur = todayItems.get('pc_bms') ?? { name: 'BMS Combo', units: 0, revenue: 0 }
+          const cur = todayItems.get('pc_bms') ?? { name: 'BMS Combo', units: 0, revenue: 0, cost: 0 }
           cur.revenue += bms
           todayItems.set('pc_bms', cur)
         }
@@ -226,6 +229,12 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
 
   const foodTotal = mainCounterTotal + popcornTotal + coolDrinksTotal
   const parkingGap = calcParkingGap(parkingExpected, parkingReported)
+
+  // gross profit from item-level revenue/cost (excludes parking, BMS combo has no cost data)
+  const itemRevenue = [...todayItems.values()].reduce((s, v) => s + v.revenue, 0)
+  const itemCost = [...todayItems.values()].reduce((s, v) => s + v.cost, 0)
+  const grossProfit = Math.round(itemRevenue - itemCost)
+  const profitMargin = itemRevenue > 0 ? Math.round((grossProfit / itemRevenue) * 100) : 0
 
   const sortedItems = [...todayItems.entries()].sort(([, a], [, b]) => b.revenue - a.revenue)
   const topItems = sortedItems.slice(0, 3).map(([, v]) => ({ name: v.name, revenue: Math.round(v.revenue) }))
@@ -308,6 +317,7 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
     foodTotal, popcornTotal, mainCounterTotal, coolDrinksTotal,
     parkingExpected, parkingReported, parkingGap,
     topItems, expenses, bCash, vsYesterday,
+    grossProfit, profitMargin,
     itemIntel, catering, parking,
   }
 }

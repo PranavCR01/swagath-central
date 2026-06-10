@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Sparkles, Check, AlertTriangle, ChevronDown, ChevronUp, SquareParking,
@@ -6,7 +6,7 @@ import {
 import { rupee } from '@/components/charts/LineChart'
 import { buildDaySummary, type DaySummaryData, type ItemRev } from '@/lib/aiSummary'
 
-type Phase = 'before' | 'loading' | 'after' | 'error'
+type Phase = 'loading' | 'after' | 'error'
 
 const TREND: Record<string, { ch: string; c: string }> = {
   up: { ch: '↑', c: 'var(--green)' },
@@ -300,12 +300,15 @@ export default function AISummaryPage() {
   const { theatreId, date } = useParams<{ theatreId: string; date: string }>()
   const navigate = useNavigate()
 
-  const [phase, setPhase] = useState<Phase>('before')
+  const [phase, setPhase] = useState<Phase>('loading')
   const [data, setData] = useState<DaySummaryData | null>(null)
   const [narrative, setNarrative] = useState<string[]>([])
   const [errorMsg, setErrorMsg] = useState('')
 
   const displayDate = date ? fmtDateLabel(date) : ''
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { generate() }, [])
 
   async function generate() {
     if (!theatreId || !date) return
@@ -364,38 +367,6 @@ export default function AISummaryPage() {
         </div>
         <AiBadge />
       </div>
-
-      {phase === 'before' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 28px', textAlign: 'center', position: 'relative' }}>
-          <div style={{
-            position: 'absolute', top: '24%', left: '50%', transform: 'translateX(-50%)', width: 260, height: 200,
-            background: 'radial-gradient(ellipse, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%)',
-            filter: 'blur(22px)', pointerEvents: 'none',
-          }} />
-          <div className="ai-float" style={{
-            position: 'relative', width: 78, height: 78, borderRadius: 22, background: 'color-mix(in srgb, var(--accent) 14%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--accent) 34%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22,
-          }}>
-            <Sparkles size={38} color="var(--accent)" />
-          </div>
-          <h2 style={{ position: 'relative', fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: 0, letterSpacing: '-.02em' }}>Generate AI Summary</h2>
-          <p style={{ position: 'relative', fontSize: 14.5, color: 'var(--muted)', margin: '10px 0 0', maxWidth: 280, lineHeight: 1.55 }}>
-            A plain-language read of today's numbers, item trends, and tomorrow's stock — built from your logged shows.
-          </p>
-          <div style={{ position: 'relative', width: '100%', maxWidth: 300, marginTop: 28 }}>
-            <button onClick={generate} style={{
-              width: '100%', height: 52, border: 'none', borderRadius: 'var(--r-btn)', background: 'var(--accent)',
-              color: 'var(--accent-ink)', fontFamily: 'inherit', fontSize: 15.5, fontWeight: 650, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: '0 6px 22px -8px var(--accent-glow)',
-            }}><Sparkles size={17} />Generate AI Summary</button>
-          </div>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: 'var(--muted)', marginTop: 14 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)' }} />
-            Powered by Groq · Usually takes 3–5 seconds
-          </div>
-        </div>
-      )}
 
       {phase === 'loading' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
