@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import swagathMark from '@/assets/swagath-mark.png'
 
@@ -44,6 +44,8 @@ function DarkInput({
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const idleTimeout = (location.state as { idleTimeout?: boolean } | null)?.idleTimeout
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -98,6 +100,15 @@ export default function LoginPage() {
             Sandhya &amp; Manasa
           </p>
         </div>
+
+        {idleTimeout && (
+          <p style={{
+            margin: '0 0 16px', fontSize: 13, color: 'var(--muted)', fontWeight: 500,
+            textAlign: 'center',
+          }}>
+            You've been signed out due to inactivity.
+          </p>
+        )}
 
         {/* Form */}
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

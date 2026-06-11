@@ -147,7 +147,7 @@ export default function DayPage() {
         .update(ticketPayload)
         .eq('id', editingShow.id)
       setSaving(false)
-      if (error) { setFormError(error.message); return }
+      if (error) { console.error(error); setFormError('Could not save show. Please try again.'); return }
     } else {
       const { error } = await supabase.from('theatre_shows').insert({
         day_id: day!.id,
@@ -155,7 +155,7 @@ export default function DayPage() {
         ...ticketPayload,
       })
       setSaving(false)
-      if (error) { setFormError(error.message); return }
+      if (error) { console.error(error); setFormError('Could not save show. Please try again.'); return }
     }
 
     closeSheet()

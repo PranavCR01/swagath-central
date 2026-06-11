@@ -47,7 +47,8 @@ export function useDay(theatreId: string, date: string) {
             .single()
           setDay(raced ?? null)
         } else {
-          setError(insertError.message)
+          console.error(insertError)
+          setError('Could not load this day. Please try again.')
         }
       } else {
         setDay(created)

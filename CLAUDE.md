@@ -111,6 +111,7 @@ src/
 | 4 | Day Close + History (expenses, B.Cash, staff wages, history view) | ✅ Complete |
 | 5 | Insights — revenue trends, show performance, top items, catering suggestions, parking gap trend | ✅ Complete |
 | 6 | AI Daily Summary — Groq-powered narrative, item intelligence, parking alert, catering plan | ✅ Complete |
+| 7 | Security Audit — secrets, session timeout, RLS review, API hardening | ✅ Complete |
 
 ---
 
@@ -132,15 +133,18 @@ src/
 - Keep this file under 150 lines — compact ruthlessly
 
 ### Testing AI Summary
-`/api/generate-summary` is a Vercel serverless function — plain `vite dev` will 404 on
-`/api/*`. To test the Groq call locally, run `npx vercel dev` (with `GROQ_API_KEY` in
-`.env.local`), or test on the deployed Vercel URL. The before/loading states render fine
-under plain `npm run dev`.
+`/api/generate-summary` 404s under plain `vite dev` (it's a Vercel function). Test via
+`npx vercel dev` with `GROQ_API_KEY` in `.env.local`, or on the deployed Vercel URL.
+
+## Known Risks
+- **No point-in-time recovery** (Supabase free tier) — export DB monthly via Supabase → Settings → Database → Backups
+- **@vercel/node devDependency has known high-sev vulns** in transitive deps (build-utils/undici) — dev-only, not in frontend bundle; full fix needs a major downgrade, deferred
+- **Single-device assumption** — no multi-device conflict resolution; last write wins
 
 ## Session Log
 <!-- One line per session: date + what was done -->
 - 2026-06-04 — Slice 3 — three slips, OB carry-forward, parking gap
-- 2026-06-05 — Slice 4 — day close, PDF report, expenses, history view
-- 2026-06-05 — Post-Slice 4 fixes: useDay silent insert failure + retry screen; DayClosePage show completion derived from slip maps not is_complete flag; UPI breakdown auto-populated from slip data on load; "P  Parking" label typo fixed
+- 2026-06-05 — Slice 4 (day close, PDF, expenses, history) + fixes (useDay retry, DayClose completion, UPI auto-populate, label typo)
 - 2026-06-10 — Slice 5 — Insights dashboard, custom SVG charts, catering suggestions, seed/cleanup data scripts
 - 2026-06-10 — Slice 6 — AI daily summary via Groq, Vercel serverless function
+- 2026-06-11 — Slice 7 — security audit: source maps off, idle timeout, error message sanitization, API rate limiting + prompt-injection guards + CORS, gitignore hardening

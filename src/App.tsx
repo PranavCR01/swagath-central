@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { useIdleTimeout } from '@/hooks/useIdleTimeout'
 import type { Session } from '@supabase/supabase-js'
 import LoginPage from '@/pages/LoginPage'
 import HomePage from '@/pages/HomePage'
@@ -13,6 +14,7 @@ import AISummaryPage from '@/pages/AISummaryPage'
 
 function ProtectedRoute() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+  useIdleTimeout()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
