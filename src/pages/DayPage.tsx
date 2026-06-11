@@ -393,7 +393,7 @@ export default function DayPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmitShow} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form onSubmit={handleSubmitShow} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Show # */}
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
                 <div style={{ width: 56, flexShrink: 0 }}>
