@@ -19,6 +19,7 @@ export function ColHeaders() {
       <div style={{ width: 52, textAlign: 'center', ...hStyle }}>OB</div>
       <div style={{ width: 52, textAlign: 'center', ...hStyle }}>REC</div>
       <div style={{ width: 52, textAlign: 'center', ...hStyle }}>CB</div>
+      <div style={{ width: 52, textAlign: 'center', ...hStyle }}>WST</div>
       <div style={{ width: 36, textAlign: 'right', ...hStyle }}>SALE</div>
       <div style={{ width: 64, textAlign: 'right', ...hStyle }}>₹ AMT</div>
     </div>

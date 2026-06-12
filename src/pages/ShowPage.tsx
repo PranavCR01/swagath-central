@@ -43,6 +43,7 @@ export default function ShowPage() {
   const [mcRows, setMcRows] = useState<TabRows>(emptyRows(MAIN_ITEMS))
   const [mcUpi, setMcUpi] = useState('')
   const [mcCash, setMcCash] = useState('')
+  const [miscDrinksMc, setMiscDrinksMc] = useState('')
   const [mcSaving, setMcSaving] = useState(false)
 
   // Popcorn state
@@ -62,6 +63,7 @@ export default function ShowPage() {
   const [cdRows, setCdRows] = useState<TabRows>(emptyRows(CD_ALL))
   const [cdUpi, setCdUpi] = useState('')
   const [cdCash, setCdCash] = useState('')
+  const [miscDrinksCd, setMiscDrinksCd] = useState('')
   const [cdSaving, setCdSaving] = useState(false)
 
   // ── Load on mount ───────────────────────────────────────────────
@@ -93,6 +95,7 @@ export default function ShowPage() {
         setMcRows(flatToRows(mcData as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY))
         setMcUpi(mcData.upi_amount ? String(mcData.upi_amount) : '')
         setMcCash(mcData.cash_amount ? String(mcData.cash_amount) : '')
+        setMiscDrinksMc(mcData.misc_drinks_mc ? String(mcData.misc_drinks_mc) : '')
         setHasMc(true)
       }
       if (pcData) {
@@ -106,6 +109,7 @@ export default function ShowPage() {
         setCdRows(flatToRows(cdData as Record<string, unknown>, CD_ALL, CD_DB_KEY))
         setCdUpi(cdData.upi_amount ? String(cdData.upi_amount) : '')
         setCdCash(cdData.cash_amount ? String(cdData.cash_amount) : '')
+        setMiscDrinksCd(cdData.misc_drinks_cd ? String(cdData.misc_drinks_cd) : '')
         setHasCd(true)
       }
       if (pkData) {
@@ -196,6 +200,7 @@ export default function ShowPage() {
           ...rowsToFlat(mcRows, MAIN_ITEMS, MC_DB_KEY),
           upi_amount: Number(mcUpi) || 0,
           cash_amount: Number(mcCash) || 0,
+          misc_drinks_mc: Number(miscDrinksMc) || 0,
         },
         { onConflict: 'show_id' },
       )
@@ -243,6 +248,7 @@ export default function ShowPage() {
           ...rowsToFlat(cdRows, CD_ALL, CD_DB_KEY),
           upi_amount: Number(cdUpi) || 0,
           cash_amount: Number(cdCash) || 0,
+          misc_drinks_cd: Number(miscDrinksCd) || 0,
         },
         { onConflict: 'show_id' },
       )
@@ -382,6 +388,7 @@ export default function ShowPage() {
           <MainCounterSlip
             rows={mcRows} setRows={setMcRows}
             upi={mcUpi} cash={mcCash} onUpi={setMcUpi} onCash={setMcCash}
+            miscDrinksMc={miscDrinksMc} onMiscDrinksMc={setMiscDrinksMc}
           />
         )}
 
@@ -399,6 +406,7 @@ export default function ShowPage() {
           <CoolDrinksSlip
             rows={cdRows} setRows={setCdRows}
             upi={cdUpi} cash={cdCash} onUpi={setCdUpi} onCash={setCdCash}
+            miscDrinksCd={miscDrinksCd} onMiscDrinksCd={setMiscDrinksCd}
           />
         )}
 

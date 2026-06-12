@@ -494,7 +494,6 @@ export default function DayPage() {
                     onChange={e => setStartTime(e.target.value)}
                     onFocus={() => setTimeFocus(true)}
                     onBlur={() => setTimeFocus(false)}
-                    required
                     style={{
                       flex: 1, background: 'transparent', border: 'none', outline: 'none',
                       color: 'var(--text)', fontSize: 16, fontFamily: 'var(--mono)',

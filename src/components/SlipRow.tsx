@@ -34,57 +34,71 @@ export interface SlipRowProps {
   ob: string
   rec: string
   cb: string
+  wst: string
   onObChange: (v: string) => void
   onRecChange: (v: string) => void
   onCbChange: (v: string) => void
+  onWstChange: (v: string) => void
+  note?: string
 }
 
 export default function SlipRow({
   label, subLabel, price,
-  ob, rec, cb,
-  onObChange, onRecChange, onCbChange,
+  ob, rec, cb, wst,
+  onObChange, onRecChange, onCbChange, onWstChange,
+  note,
 }: SlipRowProps) {
-  const sale = calcSale(Number(ob) || 0, Number(rec) || 0, Number(cb) || 0)
+  const sale = calcSale(Number(ob) || 0, Number(rec) || 0, Number(cb) || 0) - (Number(wst) || 0)
   const amount = calcAmount(sale, price)
   const saleColor = sale < 0 ? 'var(--red)' : 'var(--text)'
+  const dim = sale === 0 && (Number(wst) || 0) === 0
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 4,
-      minHeight: 52, padding: '6px 0',
       borderBottom: '1px solid var(--card-border)',
-      opacity: sale === 0 ? 0.45 : 1,
+      opacity: dim ? 0.45 : 1,
     }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        minHeight: 52, padding: '6px 0',
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontWeight: 600, color: 'var(--text)', fontSize: 14,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {label}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
+            {subLabel}
+          </div>
+        </div>
+
+        <NumCell value={ob} onChange={onObChange} />
+        <NumCell value={rec} onChange={onRecChange} />
+        <NumCell value={cb} onChange={onCbChange} />
+        <NumCell value={wst} onChange={onWstChange} />
+
         <div style={{
-          fontWeight: 600, color: 'var(--text)', fontSize: 14,
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          width: 36, flexShrink: 0, textAlign: 'right',
+          fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 600, color: saleColor,
         }}>
-          {label}
+          {sale === 0 ? '—' : sale}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
-          {subLabel}
+
+        <div style={{
+          width: 64, flexShrink: 0, textAlign: 'right',
+          fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 600,
+          color: sale < 0 ? 'var(--red)' : amount > 0 ? 'var(--accent)' : 'var(--muted)',
+        }}>
+          {sale < 0 ? '—' : amount === 0 ? '—' : '₹' + inrFmt.format(amount)}
         </div>
       </div>
-
-      <NumCell value={ob} onChange={onObChange} />
-      <NumCell value={rec} onChange={onRecChange} />
-      <NumCell value={cb} onChange={onCbChange} />
-
-      <div style={{
-        width: 36, flexShrink: 0, textAlign: 'right',
-        fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 600, color: saleColor,
-      }}>
-        {sale === 0 ? '—' : sale}
-      </div>
-
-      <div style={{
-        width: 64, flexShrink: 0, textAlign: 'right',
-        fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 600,
-        color: sale < 0 ? 'var(--red)' : amount > 0 ? 'var(--accent)' : 'var(--muted)',
-      }}>
-        {sale < 0 ? '—' : amount === 0 ? '—' : '₹' + inrFmt.format(amount)}
-      </div>
+      {note && (
+        <div style={{ fontSize: 10, color: 'var(--muted)', textAlign: 'right', padding: '0 0 6px' }}>
+          {note}
+        </div>
+      )}
     </div>
   )
 }
@@ -136,6 +150,9 @@ export function LumpRow({ label, value, onChange }: LumpRowProps) {
           transition: 'border-color .15s, box-shadow .15s',
         }}
       />
+
+      {/* WST placeholder = 52px + 4px gap */}
+      <div style={{ width: 56, flexShrink: 0 }} />
 
       {/* SALE placeholder */}
       <div style={{ width: 36, flexShrink: 0 }} />

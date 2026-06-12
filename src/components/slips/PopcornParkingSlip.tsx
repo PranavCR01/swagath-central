@@ -28,7 +28,7 @@ export default function PopcornParkingSlip({
   pcRows, setPcRows, pcBms, setPcBms, pcUpi, pcCash, onPcUpi, onPcCash,
   pkScooter, pkAuto, pkCar, pkReported, setPkScooter, setPkAuto, setPkCar, setPkReported,
 }: PopcornParkingSlipProps) {
-  const pcTotal = tabTotal(pcRows, POPCORN_ITEMS) + (Number(pcBms) || 0)
+  const pcTotal = tabTotal(pcRows, POPCORN_ITEMS) // BMS excluded from total
   const pcSlipTotal = (Number(pcUpi) || 0) + (Number(pcCash) || 0)
 
   const parkingExpected = calcParkingExpected(
@@ -50,9 +50,11 @@ export default function PopcornParkingSlip({
           ob={pcRows[item.id]?.ob ?? ''}
           rec={pcRows[item.id]?.rec ?? ''}
           cb={pcRows[item.id]?.cb ?? ''}
+          wst={pcRows[item.id]?.wst ?? ''}
           onObChange={v => updateRow(setPcRows, item.id, 'ob', v)}
           onRecChange={v => updateRow(setPcRows, item.id, 'rec', v)}
           onCbChange={v => updateRow(setPcRows, item.id, 'cb', v)}
+          onWstChange={v => updateRow(setPcRows, item.id, 'wst', v)}
         />
       ))}
       <LumpRow label="BMS Combo" value={pcBms} onChange={setPcBms} />

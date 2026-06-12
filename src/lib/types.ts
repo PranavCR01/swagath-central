@@ -1,5 +1,5 @@
 // Slip item state shape (strings so inputs stay controlled even when empty)
-export type ItemRow = { ob: string; rec: string; cb: string }
+export type ItemRow = { ob: string; rec: string; cb: string; wst: string }
 export type TabRows = Record<string, ItemRow>
 
 // Supabase table shapes — flat columns (no JSONB items)

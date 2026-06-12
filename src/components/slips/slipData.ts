@@ -1,5 +1,5 @@
 import { PRICES } from '@/lib/prices'
-import { calcSale, calcAmount, calcClosingStock } from '@/lib/calculations'
+import { calcSale, calcAmount } from '@/lib/calculations'
 import type { TabRows } from '@/lib/types'
 
 // ── Item catalogues ───────────────────────────────────────────────
@@ -95,7 +95,7 @@ export const rupee = (n: number) => '₹' + inrFmt.format(Math.round(n))
 
 // ── Row helpers ──────────────────────────────────────────────────
 export function emptyRows(items: { id: string }[]): TabRows {
-  return Object.fromEntries(items.map(i => [i.id, { ob: '', rec: '', cb: '' }]))
+  return Object.fromEntries(items.map(i => [i.id, { ob: '', rec: '', cb: '', wst: '' }]))
 }
 
 export function flatToRows(
@@ -110,6 +110,7 @@ export function flatToRows(
       ob:  data[`${k}_ob`]  != null ? String(data[`${k}_ob`])  : '',
       rec: data[`${k}_rec`] != null ? String(data[`${k}_rec`]) : '',
       cb:  data[`${k}_cb`]  != null ? String(data[`${k}_cb`])  : '',
+      wst: String(data[`${k}_wst`] ?? 0),
     }
   }
   return rows
@@ -123,47 +124,46 @@ export function rowsToFlat(
   const out: Record<string, number> = {}
   for (const item of items) {
     const k = keyMap[item.id]
-    const r = rows[item.id] ?? { ob: '', rec: '', cb: '' }
+    const r = rows[item.id] ?? { ob: '', rec: '', cb: '', wst: '' }
     const ob  = Number(r.ob)  || 0
     const rec = Number(r.rec) || 0
     const cb  = Number(r.cb)  || 0
+    const wst = Math.max(0, Number(r.wst) || 0)
     out[`${k}_ob`]   = ob
     out[`${k}_rec`]  = rec
     out[`${k}_cb`]   = cb
-    out[`${k}_sale`] = Math.max(0, calcSale(ob, rec, cb))
+    out[`${k}_wst`]  = wst
+    out[`${k}_sale`] = Math.max(0, calcSale(ob, rec, cb) - wst)
   }
   return out
 }
 
-export function applyCarryForward(prevItems: TabRows, items: { id: string }[]): TabRows {
-  const rows = emptyRows(items)
-  items.forEach(item => {
-    const prev = prevItems[item.id]
-    if (prev) {
-      const ob = Number(prev.ob) || 0
-      const rec = Number(prev.rec) || 0
-      const cb = Number(prev.cb) || 0
-      const sale = calcSale(ob, rec, cb)
-      const newOb = calcClosingStock(ob, rec, cb, sale)
-      rows[item.id] = { ob: String(newOb), rec: '', cb: '' }
-    }
-  })
-  return rows
+export function applyCarryForward(
+  prevRows: TabRows,
+  items: readonly { id: string }[],
+): TabRows {
+  const result: TabRows = {}
+  for (const item of items) {
+    const prev = prevRows[item.id]
+    const cb = prev?.cb ?? '0'
+    result[item.id] = { ob: cb, rec: '', cb: '', wst: '' }
+  }
+  return result
 }
 
 export function tabTotal(rows: TabRows, items: { id: string; price: number }[]): number {
   return items.reduce((sum, item) => {
-    const r = rows[item.id] ?? { ob: '', rec: '', cb: '' }
-    const sale = calcSale(Number(r.ob) || 0, Number(r.rec) || 0, Number(r.cb) || 0)
-    return sum + calcAmount(sale, item.price)
+    const r = rows[item.id] ?? { ob: '', rec: '', cb: '', wst: '' }
+    const sale = calcSale(Number(r.ob) || 0, Number(r.rec) || 0, Number(r.cb) || 0) - (Number(r.wst) || 0)
+    return sum + calcAmount(Math.max(0, sale), item.price)
   }, 0)
 }
 
 export function updateRow(
   setter: React.Dispatch<React.SetStateAction<TabRows>>,
   id: string,
-  field: 'ob' | 'rec' | 'cb',
+  field: 'ob' | 'rec' | 'cb' | 'wst',
   v: string,
 ) {
-  setter(prev => ({ ...prev, [id]: { ...(prev[id] ?? { ob: '', rec: '', cb: '' }), [field]: v } }))
+  setter(prev => ({ ...prev, [id]: { ...(prev[id] ?? { ob: '', rec: '', cb: '', wst: '' }), [field]: v } }))
 }
