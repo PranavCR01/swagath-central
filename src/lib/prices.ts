@@ -3,17 +3,17 @@ export const PRICES = {
   veg_puff: 40,
   egg_puff: 40,
   h_cake: 40,
-  jam_bun: 30,
+  jam_bun: 40,
   ckn_puff: 60,
-  bs: 30,
   samosa: 40,
-  tin: 60,
+  tin: 70,
   frooty: 40,
-  chips: 30,
-  frymes: 30,
+  chips: 40,
+  frymes: 40,
   water: 30,
   milkshake: 50,
-  lays: 60,
+  kettle_chips: 60,
+  tins_mc: 70,
 
   // Popcorn
   cone_60: 60,
@@ -23,7 +23,6 @@ export const PRICES = {
   // Cool Drinks
   cd_water: 30,
   cd_tin: 70,
-  cd_tin2: 60,
   frooty_trop: 40,
   cd_milkshake: 50,
   french_fries: 70,
@@ -35,7 +34,8 @@ export const PRICES = {
   ice_cream1: 40,
   ice_cream2: 60,
   ice_cream3: 60,
-  tea_coffee: 30,
+  tea_coffee: 40,
+  sandwich: 120,
 
   // Parking
   scooter: 20,
@@ -50,7 +50,6 @@ export const COSTS = {
   h_cake: 14.5,
   jam_bun: 13,
   ckn_puff: 23.5,
-  bs: 12,
   samosa: 15,
   tin: 30,
   frooty: 17,
@@ -58,7 +57,8 @@ export const COSTS = {
   frymes: 12.5,
   water: 10.8,
   milkshake: 23.5,
-  lays: 27.5,
+  kettle_chips: 27.5,
+  tins_mc: 30,
 
   // Popcorn
   cone_60: 16,
@@ -68,7 +68,6 @@ export const COSTS = {
   // Cool Drinks
   cd_water: 10.8,
   cd_tin: 35,
-  cd_tin2: 30,
   frooty_trop: 17,
   cd_milkshake: 23.5,
   french_fries: 22,
@@ -81,4 +80,5 @@ export const COSTS = {
   ice_cream2: 30,
   ice_cream3: 30,
   tea_coffee: 10,
+  sandwich: 55,
 } as const

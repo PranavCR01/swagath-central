@@ -7,22 +7,23 @@ import { loadSlipDataForShows } from './loadSlipData'
 // ── DB column prefix -> price/cost/display-name maps ──────────────────────
 export const MC_PRICE: Record<string, number> = {
   veg_puff: PRICES.veg_puff, egg_puff: PRICES.egg_puff, h_cake: PRICES.h_cake,
-  jam_bun: PRICES.jam_bun, ckn_puff: PRICES.ckn_puff, bs: PRICES.bs,
+  jam_bun: PRICES.jam_bun, ckn_puff: PRICES.ckn_puff,
   samosa: PRICES.samosa, tin: PRICES.tin, frooty: PRICES.frooty,
   chips: PRICES.chips, frymes: PRICES.frymes, water: PRICES.water,
-  milkshake: PRICES.milkshake, lays: PRICES.lays,
+  milkshake: PRICES.milkshake, kettle_chips: PRICES.kettle_chips, tins_mc: PRICES.tins_mc,
 }
 export const MC_COST: Record<string, number> = {
   veg_puff: COSTS.veg_puff, egg_puff: COSTS.egg_puff, h_cake: COSTS.h_cake,
-  jam_bun: COSTS.jam_bun, ckn_puff: COSTS.ckn_puff, bs: COSTS.bs,
+  jam_bun: COSTS.jam_bun, ckn_puff: COSTS.ckn_puff,
   samosa: COSTS.samosa, tin: COSTS.tin, frooty: COSTS.frooty,
   chips: COSTS.chips, frymes: COSTS.frymes, water: COSTS.water,
-  milkshake: COSTS.milkshake, lays: COSTS.lays,
+  milkshake: COSTS.milkshake, kettle_chips: COSTS.kettle_chips, tins_mc: COSTS.tins_mc,
 }
 export const MC_NAME: Record<string, string> = {
   veg_puff: 'Veg Puff', egg_puff: 'Egg Puff', h_cake: 'Honey Cake', jam_bun: 'Jam Bun',
-  ckn_puff: 'C Puff', bs: 'BS', samosa: 'Samosa', tin: 'Tins', frooty: 'Frooty',
-  chips: 'Chips', frymes: 'Frymes', water: 'Water', milkshake: 'Milkshake', lays: 'Lays',
+  ckn_puff: 'C Puff', samosa: 'Samosa', tin: 'Tins', frooty: 'Frooty',
+  chips: 'Chips', frymes: 'Frymes', water: 'Water', milkshake: 'Milkshake',
+  kettle_chips: 'Kettle Chips', tins_mc: 'Tins (MC)',
 }
 
 export const PC_PRICE: Record<string, number> = { cone_60: PRICES.cone_60, cone_130: PRICES.cone_130, cone_200: PRICES.cone_200 }
@@ -30,24 +31,24 @@ export const PC_COST: Record<string, number> = { cone_60: COSTS.cone_60, cone_13
 export const PC_NAME: Record<string, string> = { cone_60: 'Cone S', cone_130: 'Cone M', cone_200: 'Cone L' }
 
 export const CD_PRICE: Record<string, number> = {
-  water: PRICES.cd_water, tin: PRICES.cd_tin, tins2: PRICES.cd_tin2, frooty_trop: PRICES.frooty_trop,
+  water: PRICES.cd_water, tin: PRICES.cd_tin, frooty_trop: PRICES.frooty_trop,
   milkshake: PRICES.cd_milkshake, french_fries: PRICES.french_fries, veg_bites: PRICES.veg_bites,
   onion_samosa: PRICES.onion_samosa, ckn_popcorn: PRICES.ckn_popcorn, ckn_samosa: PRICES.ckn_samosa,
   ckn_nuggets: PRICES.ckn_nuggets, ice_cream1: PRICES.ice_cream1, ice_cream2: PRICES.ice_cream2,
-  ice_cream3: PRICES.ice_cream3, tea_coffee: PRICES.tea_coffee,
+  ice_cream3: PRICES.ice_cream3, tea_coffee: PRICES.tea_coffee, sandwich: PRICES.sandwich,
 }
 export const CD_COST: Record<string, number> = {
-  water: COSTS.cd_water, tin: COSTS.cd_tin, tins2: COSTS.cd_tin2, frooty_trop: COSTS.frooty_trop,
+  water: COSTS.cd_water, tin: COSTS.cd_tin, frooty_trop: COSTS.frooty_trop,
   milkshake: COSTS.cd_milkshake, french_fries: COSTS.french_fries, veg_bites: COSTS.veg_bites,
   onion_samosa: COSTS.onion_samosa, ckn_popcorn: COSTS.ckn_popcorn, ckn_samosa: COSTS.ckn_samosa,
   ckn_nuggets: COSTS.ckn_nuggets, ice_cream1: COSTS.ice_cream1, ice_cream2: COSTS.ice_cream2,
-  ice_cream3: COSTS.ice_cream3, tea_coffee: COSTS.tea_coffee,
+  ice_cream3: COSTS.ice_cream3, tea_coffee: COSTS.tea_coffee, sandwich: COSTS.sandwich,
 }
 export const CD_NAME: Record<string, string> = {
-  water: 'Water (CD)', tin: 'Tins 1', tins2: 'Tins 2', frooty_trop: 'Frooty', milkshake: 'Milkshake (CD)',
+  water: 'Water (CD)', tin: 'Tins', frooty_trop: 'Frooty', milkshake: 'Milkshake (CD)',
   french_fries: 'French Fries', veg_bites: 'Veg Bites', onion_samosa: 'Onion Samosa', ckn_popcorn: 'Ckn Popcorn',
   ckn_samosa: 'Ckn Samosa', ckn_nuggets: 'Ckn Nuggets', ice_cream1: 'Ice Cream 1', ice_cream2: 'Ice Cream 2',
-  ice_cream3: 'Ice Cream 3', tea_coffee: 'Tea/Coffee',
+  ice_cream3: 'Ice Cream 3', tea_coffee: 'Tea/Coffee', sandwich: 'Sandwich',
 }
 
 export function toDateStr(d: Date): string {

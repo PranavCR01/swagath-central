@@ -4,20 +4,20 @@ import type { TabRows } from '@/lib/types'
 
 // ── Item catalogues ───────────────────────────────────────────────
 export const MAIN_ITEMS = [
-  { id: 'vegpuff',  name: 'Veg Puff',   price: PRICES.veg_puff  },
-  { id: 'eggpuff',  name: 'Egg Puff',   price: PRICES.egg_puff  },
-  { id: 'hcake',    name: 'Honey Cake', price: PRICES.h_cake    },
-  { id: 'jambun',   name: 'Jam Bun',    price: PRICES.jam_bun   },
-  { id: 'cknpuff',  name: 'C Puff',     price: PRICES.ckn_puff  },
-  { id: 'bs',       name: 'BS',         price: PRICES.bs        },
-  { id: 'samosa',   name: 'Samosa',     price: PRICES.samosa    },
-  { id: 'tin',      name: 'Tins',       price: PRICES.tin       },
-  { id: 'frooty',   name: 'Frooty',     price: PRICES.frooty    },
-  { id: 'chips',    name: 'Chips',      price: PRICES.chips     },
-  { id: 'frymes',   name: 'Frymes',     price: PRICES.frymes    },
-  { id: 'water',    name: 'Water',      price: PRICES.water     },
-  { id: 'mshake',   name: 'Milkshake',  price: PRICES.milkshake },
-  { id: 'lays',     name: 'Lays',       price: PRICES.lays      },
+  { id: 'vegpuff',   name: 'Veg Puff',     price: PRICES.veg_puff     },
+  { id: 'eggpuff',   name: 'Egg Puff',     price: PRICES.egg_puff     },
+  { id: 'samosa',    name: 'Samosa',       price: PRICES.samosa       },
+  { id: 'cknpuff',   name: 'C Puff',       price: PRICES.ckn_puff     },
+  { id: 'hcake',     name: 'Honey Cake',   price: PRICES.h_cake       },
+  { id: 'jambun',    name: 'Jam Bun',      price: PRICES.jam_bun      },
+  { id: 'chips',     name: 'Chips',        price: PRICES.chips        },
+  { id: 'frymes',    name: 'Frymes',       price: PRICES.frymes       },
+  { id: 'kettle',    name: 'Kettle Chips', price: PRICES.kettle_chips },
+  { id: 'water',     name: 'Water',        price: PRICES.water        },
+  { id: 'mshake',    name: 'Milkshake',    price: PRICES.milkshake    },
+  { id: 'frooty',    name: 'Frooty',       price: PRICES.frooty       },
+  { id: 'tin',       name: 'Tins',         price: PRICES.tin          },
+  { id: 'tins_mc',   name: 'Tins (MC)',    price: PRICES.tins_mc      },
 ]
 
 export const POPCORN_ITEMS = [
@@ -28,8 +28,7 @@ export const POPCORN_ITEMS = [
 
 export const CD_ALL = [
   { id: 'c_water',   name: 'Water',         price: PRICES.cd_water,     section: 'drinks' },
-  { id: 'c_tin',     name: 'Tins 1',        price: PRICES.cd_tin,       section: 'drinks' },
-  { id: 'c_tin2',    name: 'Tins 2',        price: PRICES.cd_tin2,      section: 'drinks' },
+  { id: 'c_tin',     name: 'Tins',          price: PRICES.cd_tin,       section: 'drinks' },
   { id: 'c_frooty',  name: 'Frooty',        price: PRICES.frooty_trop,  section: 'drinks' },
   { id: 'c_mshake',  name: 'Milkshake',     price: PRICES.cd_milkshake, section: 'drinks' },
   { id: 'c_fries',   name: 'French Fries',  price: PRICES.french_fries, section: 'live'   },
@@ -42,6 +41,7 @@ export const CD_ALL = [
   { id: 'c_ice2',    name: 'Ice Cream 2',   price: PRICES.ice_cream2,   section: 'live'   },
   { id: 'c_ice3',    name: 'Ice Cream 3',   price: PRICES.ice_cream3,   section: 'live'   },
   { id: 'c_tcoffee', name: 'Tea / Coffee',  price: PRICES.tea_coffee,   section: 'live'   },
+  { id: 'c_sand',    name: 'Sandwich',      price: PRICES.sandwich,     section: 'live'   },
 ]
 
 // ── item.id → DB column prefix ────────────────────────────────────
@@ -51,7 +51,6 @@ export const MC_DB_KEY: Record<string, string> = {
   hcake:   'h_cake',
   jambun:  'jam_bun',
   cknpuff: 'ckn_puff',
-  bs:      'bs',
   samosa:  'samosa',
   tin:     'tin',
   frooty:  'frooty',
@@ -59,7 +58,8 @@ export const MC_DB_KEY: Record<string, string> = {
   frymes:  'frymes',
   water:   'water',
   mshake:  'milkshake',
-  lays:    'lays',
+  kettle:  'kettle_chips',
+  tins_mc: 'tins_mc',
 }
 export const PC_DB_KEY: Record<string, string> = {
   cone_s: 'cone_60', cone_m: 'cone_130', cone_l: 'cone_200',
@@ -67,7 +67,6 @@ export const PC_DB_KEY: Record<string, string> = {
 export const CD_DB_KEY: Record<string, string> = {
   c_water:   'water',
   c_tin:     'tin',
-  c_tin2:    'tins2',
   c_frooty:  'frooty_trop',
   c_mshake:  'milkshake',
   c_fries:   'french_fries',
@@ -80,6 +79,7 @@ export const CD_DB_KEY: Record<string, string> = {
   c_ice2:    'ice_cream2',
   c_ice3:    'ice_cream3',
   c_tcoffee: 'tea_coffee',
+  c_sand:    'sandwich',
 }
 
 export const TABS = [
