@@ -8,6 +8,7 @@ import {
 import jsPDF from 'jspdf'
 import { Sparkles } from 'lucide-react'
 import { MC_PRICE, MC_COST, MC_NAME, PC_PRICE, PC_COST, PC_NAME, CD_PRICE, CD_COST, CD_NAME } from '@/lib/insightsQueries'
+import { loadSlipDataForShows } from '@/lib/loadSlipData'
 
 const ITEM_MAPS = [
   { price: MC_PRICE as Record<string, number>, cost: MC_COST as Record<string, number>, name: MC_NAME as Record<string, string> },
@@ -130,11 +131,8 @@ export default function DayClosePage() {
       if (!shows?.length) { setLoading(false); return }
 
       const showIds = shows.map(s => s.id)
-      const [mcRes, pcRes, cdRes, pkRes, expRes, swRes] = await Promise.all([
-        supabase.from('theatre_main_counter').select('show_id,upi_amount,cash_amount').in('show_id', showIds),
-        supabase.from('theatre_popcorn').select('show_id,upi_amount,cash_amount,bms_combo_amount').in('show_id', showIds),
-        supabase.from('theatre_cool_drinks').select('show_id,upi_amount,cash_amount').in('show_id', showIds),
-        supabase.from('theatre_parking').select('show_id,scooter_count,auto_count,car_count,reported_amount').in('show_id', showIds),
+      const [{ mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows }, expRes, swRes] = await Promise.all([
+        loadSlipDataForShows(showIds),
         supabase.from('theatre_expenses').select('*').eq('day_id', day.id).maybeSingle(),
         supabase.from('theatre_staff_wages').select('id,staff_name,amount').eq('day_id', day.id),
       ])
@@ -144,10 +142,10 @@ export default function DayClosePage() {
       type CdR = { show_id: string; upi_amount: number; cash_amount: number }
       type PkR = { show_id: string; scooter_count: number; auto_count: number; car_count: number; reported_amount: number | null }
 
-      const mcMap = Object.fromEntries(((mcRes.data ?? []) as McR[]).map(r => [r.show_id, r]))
-      const pcMap = Object.fromEntries(((pcRes.data ?? []) as PcR[]).map(r => [r.show_id, r]))
-      const cdMap = Object.fromEntries(((cdRes.data ?? []) as CdR[]).map(r => [r.show_id, r]))
-      const pkMap = Object.fromEntries(((pkRes.data ?? []) as PkR[]).map(r => [r.show_id, r]))
+      const mcMap = Object.fromEntries((mcRows as McR[]).map(r => [r.show_id, r]))
+      const pcMap = Object.fromEntries((pcRows as PcR[]).map(r => [r.show_id, r]))
+      const cdMap = Object.fromEntries((cdRows as CdR[]).map(r => [r.show_id, r]))
+      const pkMap = Object.fromEntries((pkRows as PkR[]).map(r => [r.show_id, r]))
 
       const summaries: ShowSummary[] = shows.map(s => {
         const mc = mcMap[s.id], pc = pcMap[s.id], cd = cdMap[s.id], pk = pkMap[s.id]
@@ -266,14 +264,10 @@ export default function DayClosePage() {
 
   async function downloadDayReport() {
     const showIds = showSummaries.map(s => s.showId)
-    const [mcRes, pcRes, cdRes] = await Promise.all([
-      supabase.from('theatre_main_counter').select('*').in('show_id', showIds.length ? showIds : ['']),
-      supabase.from('theatre_popcorn').select('*').in('show_id', showIds.length ? showIds : ['']),
-      supabase.from('theatre_cool_drinks').select('*').in('show_id', showIds.length ? showIds : ['']),
-    ])
-    const mcMap = new Map((mcRes.data ?? []).map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
-    const pcMap = new Map((pcRes.data ?? []).map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
-    const cdMap = new Map((cdRes.data ?? []).map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
+    const { mc: mcRows, pc: pcRows, cd: cdRows } = await loadSlipDataForShows(showIds)
+    const mcMap = new Map(mcRows.map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
+    const pcMap = new Map(pcRows.map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
+    const cdMap = new Map(cdRows.map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
 
     // gross profit / cost of goods across all of today's shows
     let costOfGoods = 0

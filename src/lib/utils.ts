@@ -15,3 +15,8 @@ export function getYesterdayIST(): string {
   d.setDate(d.getDate() - 1)
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
 }
+
+// Prevents Supabase .in() from erroring on empty arrays
+export function safeIn(ids: string[]): string[] {
+  return ids.length ? ids : ['__none__']
+}

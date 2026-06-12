@@ -1,6 +1,8 @@
 import { supabase } from './supabase'
 import { PRICES, COSTS } from './prices'
 import { calcParkingExpected } from './calculations'
+import { safeIn } from './utils'
+import { loadSlipDataForShows } from './loadSlipData'
 
 // ── DB column prefix -> price/cost/display-name maps ──────────────────────
 export const MC_PRICE: Record<string, number> = {
@@ -109,12 +111,7 @@ async function loadShowAggregates(theatreId: string, dates: string[]): Promise<S
   if (!shows || shows.length === 0) return []
   const showIds = shows.map(s => s.id as string)
 
-  const [{ data: mcRows }, { data: pcRows }, { data: cdRows }, { data: pkRows }] = await Promise.all([
-    supabase.from('theatre_main_counter').select('*').in('show_id', showIds),
-    supabase.from('theatre_popcorn').select('*').in('show_id', showIds),
-    supabase.from('theatre_cool_drinks').select('*').in('show_id', showIds),
-    supabase.from('theatre_parking').select('*').in('show_id', showIds),
-  ])
+  const { mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows } = await loadSlipDataForShows(showIds)
   const mcMap = new Map((mcRows ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
   const pcMap = new Map((pcRows ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
   const cdMap = new Map((cdRows ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
@@ -239,9 +236,9 @@ export async function fetchTopItems(theatreId: string | 'both', days: number): P
     if (showIds.length === 0) continue
 
     const [{ data: mcRows }, { data: pcRows }, { data: cdRows }] = await Promise.all([
-      supabase.from('theatre_main_counter').select('*').in('show_id', showIds),
-      supabase.from('theatre_popcorn').select('*').in('show_id', showIds),
-      supabase.from('theatre_cool_drinks').select('*').in('show_id', showIds),
+      supabase.from('theatre_main_counter').select('*').in('show_id', safeIn(showIds)),
+      supabase.from('theatre_popcorn').select('*').in('show_id', safeIn(showIds)),
+      supabase.from('theatre_cool_drinks').select('*').in('show_id', safeIn(showIds)),
     ])
 
     for (const row of mcRows ?? []) {
@@ -342,9 +339,9 @@ export async function fetchCateringSuggestions(theatreId: string): Promise<Cater
   const dateByShow = new Map(aggs.map(a => [a.showId, a.date]))
 
   const [{ data: mcRows }, { data: pcRows }, { data: cdRows }] = await Promise.all([
-    supabase.from('theatre_main_counter').select('*').in('show_id', showIds.length ? showIds : ['']),
-    supabase.from('theatre_popcorn').select('*').in('show_id', showIds.length ? showIds : ['']),
-    supabase.from('theatre_cool_drinks').select('*').in('show_id', showIds.length ? showIds : ['']),
+    supabase.from('theatre_main_counter').select('*').in('show_id', safeIn(showIds)),
+    supabase.from('theatre_popcorn').select('*').in('show_id', safeIn(showIds)),
+    supabase.from('theatre_cool_drinks').select('*').in('show_id', safeIn(showIds)),
   ])
 
   // per-item: array of {date, qty} across matching shows

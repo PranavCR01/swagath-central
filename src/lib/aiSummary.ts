@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { calcParkingExpected, calcParkingGap, computeShowTotal, computeBCash } from './calculations'
+import { loadSlipDataForShows } from './loadSlipData'
 import {
   MC_PRICE, MC_NAME, MC_COST, PC_PRICE, PC_NAME, PC_COST, CD_PRICE, CD_NAME, CD_COST,
   sumBySale, dateRange, toDateStr, fetchParkingGapTrend,
@@ -92,16 +93,11 @@ async function loadDayShows(theatreId: string, date: string): Promise<{ dayId: s
   if (!shows?.length) return { dayId: day.id, shows: [] }
 
   const showIds = shows.map(s => s.id as string)
-  const [mcRes, pcRes, cdRes, pkRes] = await Promise.all([
-    supabase.from('theatre_main_counter').select('*').in('show_id', showIds),
-    supabase.from('theatre_popcorn').select('*').in('show_id', showIds),
-    supabase.from('theatre_cool_drinks').select('*').in('show_id', showIds),
-    supabase.from('theatre_parking').select('*').in('show_id', showIds),
-  ])
-  const mcMap = new Map((mcRes.data ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
-  const pcMap = new Map((pcRes.data ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
-  const cdMap = new Map((cdRes.data ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
-  const pkMap = new Map((pkRes.data ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
+  const { mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows } = await loadSlipDataForShows(showIds)
+  const mcMap = new Map(mcRows.map(r => [r.show_id as string, r as Record<string, unknown>]))
+  const pcMap = new Map(pcRows.map(r => [r.show_id as string, r as Record<string, unknown>]))
+  const cdMap = new Map(cdRows.map(r => [r.show_id as string, r as Record<string, unknown>]))
+  const pkMap = new Map(pkRows.map(r => [r.show_id as string, r as Record<string, unknown>]))
 
   return {
     dayId: day.id,
