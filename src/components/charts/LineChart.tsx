@@ -59,10 +59,12 @@ export function LineChart({ series, height = 210, yTicks = 4, showDots = true, g
 
   const uid = useMemo(() => 'lc' + Math.random().toString(36).slice(2, 7), [])
 
-  if (!series.length || !series[0]?.points?.length) return null
+  const maxPoints = Math.max(...series.map(s => s.points.length), 0)
+  if (!series.length || maxPoints === 0) return null
 
   const padL = 44, padR = 12, padT = 14, padB = 26
-  const n = series[0].points.length
+  const n = maxPoints
+  const labelSeries = series.find(s => s.points.length === maxPoints)!
   const allV = series.flatMap(s => s.points.map(p => p.v))
   const maxV = Math.max(...allV, 1)
   const niceMax = niceCeil(maxV)
@@ -111,7 +113,7 @@ export function LineChart({ series, height = 210, yTicks = 4, showDots = true, g
           </g>
         ))}
         {/* x labels */}
-        {series[0].points.map((p, i) => (i % step === 0 || i === n - 1) ? (
+        {labelSeries.points.map((p, i) => (i % step === 0 || i === n - 1) ? (
           <text key={i} x={x(i)} y={height - 8} textAnchor="middle" fontSize="9.5" fontFamily="var(--mono)" fill="var(--muted)">{p.label}</text>
         ) : null)}
 
@@ -138,14 +140,14 @@ export function LineChart({ series, height = 210, yTicks = 4, showDots = true, g
       </svg>
 
       {/* hover tooltip */}
-      {hover != null && hover < series[0].points.length && (
+      {hover != null && hover < labelSeries.points.length && (
         <div style={{
           position: 'absolute', top: 4,
           left: Math.min(Math.max(x(hover) - 60, 4), w - 124),
           background: 'var(--surface-2)', border: '1px solid var(--card-border)', borderRadius: 10,
           padding: '7px 10px', pointerEvents: 'none', boxShadow: '0 8px 24px rgba(0,0,0,.5)', minWidth: 96,
         }}>
-          <div style={{ fontSize: 10.5, color: 'var(--muted)', fontFamily: 'var(--mono)', marginBottom: 3 }}>{series[0].points[hover].label}</div>
+          <div style={{ fontSize: 10.5, color: 'var(--muted)', fontFamily: 'var(--mono)', marginBottom: 3 }}>{labelSeries.points[hover].label}</div>
           {series.map(s => s.points[hover] && (
             <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5 }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color }} />

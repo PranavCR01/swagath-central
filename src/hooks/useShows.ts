@@ -5,6 +5,7 @@ import type { Show } from '@/lib/types'
 export function useShows(dayId: string | null) {
   const [shows, setShows] = useState<Show[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
@@ -15,12 +16,20 @@ export function useShows(dayId: string | null) {
 
     async function fetchShows() {
       setLoading(true)
+      setError(null)
 
-      const { data: rawShows } = await supabase
+      const { data: rawShows, error: rawShowsError } = await supabase
         .from('theatre_shows')
         .select('*')
         .eq('day_id', dayId)
         .order('show_number', { ascending: true })
+
+      if (rawShowsError) {
+        console.error(rawShowsError)
+        setError('Could not load shows. Please try again.')
+        setLoading(false)
+        return
+      }
 
       if (!rawShows || rawShows.length === 0) {
         setShows([])
@@ -36,6 +45,10 @@ export function useShows(dayId: string | null) {
         supabase.from('theatre_popcorn').select('show_id').in('show_id', showIds),
         supabase.from('theatre_cool_drinks').select('show_id').in('show_id', showIds),
       ])
+
+      if (mcRes.error) console.error(mcRes.error)
+      if (pcRes.error) console.error(pcRes.error)
+      if (cdRes.error) console.error(cdRes.error)
 
       const mcSet = new Set(mcRes.data?.map((r) => r.show_id) ?? [])
       const pcSet = new Set(pcRes.data?.map((r) => r.show_id) ?? [])
@@ -53,5 +66,5 @@ export function useShows(dayId: string | null) {
     fetchShows()
   }, [dayId, tick])
 
-  return { shows, loading, refetch: () => setTick((t) => t + 1) }
+  return { shows, loading, error, refetch: () => setTick((t) => t + 1) }
 }

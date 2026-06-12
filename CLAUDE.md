@@ -42,13 +42,13 @@ catering predictions and operational insights (Slice 5, future).
 ---
 
 ## Item Prices (hardcoded in prices.ts — never store in DB)
-**Main Counter:** Veg Puff ₹40, Egg Puff ₹40, Samosa ₹80, Ckn Puff ₹40, H.Cake ₹40, Jam Bun ₹40, Chips ₹45, Frymes ₹40, Kettle Chips ₹40, Water ₹30, Milkshake ₹30, Frooty ₹40, Tin ₹70
+**Main Counter:** Veg Puff ₹40, Egg Puff ₹40, H.Cake ₹40, Jam Bun ₹30, Ckn Puff ₹60, BS ₹30, Samosa ₹40, Tin ₹60, Frooty ₹40, Chips ₹30, Frymes ₹30, Water ₹30, Milkshake ₹50, Lays ₹60
 
 **Popcorn:** Cone Small ₹60, Cone Medium ₹130, Cone Large ₹200, BMS Combo = lump amount only
 
-**Cool Drinks:** Water ₹30, Tin ₹70, Frooty & Tropicana ₹40, Milkshake ₹50, French Fries ₹70, Veg Bites ₹70, Onion Samosa ₹80, Ckn Popcorn ₹80, Ckn Samosa ₹120, Ckn Nuggets ₹100, Sandwich ₹120
+**Cool Drinks:** Water ₹30, Tins 1 ₹70, Tins 2 ₹60, Frooty/Tropicana ₹40, Milkshake ₹50, French Fries ₹70, Veg Bites ₹70, Onion Samosa ₹80, Ckn Popcorn ₹80, Ckn Samosa ₹120, Ckn Nuggets ₹100, Ice Cream 1 ₹40, Ice Cream 2 ₹60, Ice Cream 3 ₹60, Tea/Coffee ₹30
 
-**Parking:** Scooter ₹20, Auto ₹40, Car ₹80
+**Parking:** Scooter ₹20, Auto ₹30, Car ₹50
 
 ---
 

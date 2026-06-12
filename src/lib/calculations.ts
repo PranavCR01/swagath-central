@@ -1,3 +1,5 @@
+import { PRICES } from './prices'
+
 // sale = ob + rec - cb
 // Negative result means CB exceeded available stock (data entry error) — not clamped so it can be surfaced.
 export function calcSale(ob: number, rec: number, cb: number): number {
@@ -20,27 +22,12 @@ export function calcParkingExpected(
   autoCount: number,
   carCount: number
 ): number {
-  return scooterCount * 20 + autoCount * 30 + carCount * 50
+  return scooterCount * PRICES.scooter + autoCount * PRICES.auto + carCount * PRICES.car
 }
 
 // Parking gap: positive = staff owe money, negative = overpaid
 export function calcParkingGap(expected: number, reported: number): number {
   return expected - reported
-}
-
-// Show total = main counter + popcorn + cool drinks + parking reported
-export function calcShowTotal(
-  mainCounterTotal: number,
-  popcornTotal: number,
-  coolDrinksTotal: number,
-  parkingReported: number
-): number {
-  return mainCounterTotal + popcornTotal + coolDrinksTotal + parkingReported
-}
-
-// Day B.Cash = total sales - total expenses
-export function calcBCash(totalSales: number, totalExpenses: number): number {
-  return totalSales - totalExpenses
 }
 
 export function computeSlipTotal(upiAmount: number, cashAmount: number): number {

@@ -30,7 +30,7 @@ export default function DayPage() {
   const navigate = useNavigate()
 
   const { day, theatreName, loading: dayLoading, error: dayError } = useDay(theatreId!, date!)
-  const { shows, loading: showsLoading, refetch } = useShows(day?.id ?? null)
+  const { shows, loading: showsLoading, error: showsError, refetch } = useShows(day?.id ?? null)
 
   // Theatre capacity
   const [capacity, setCapacity] = useState<number | null>(null)
@@ -255,6 +255,11 @@ export default function DayPage() {
 
       {/* Shows list */}
       <div style={{ flex: 1, padding: '18px 18px 8px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+        {showsError && (
+          <div style={{ textAlign: 'center', padding: '8px 0', color: 'var(--muted)', fontSize: 12 }}>
+            {showsError}
+          </div>
+        )}
         {showsLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
             <div style={{ color: 'var(--muted)', fontSize: 14 }}>Loading shows…</div>

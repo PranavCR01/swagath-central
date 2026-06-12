@@ -1,5 +1,3 @@
-import swagathMark from '@/assets/swagath-mark.png'
-
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 
 interface TheatreCardProps {
@@ -95,5 +93,3 @@ export default function TheatreCard({ name, showCount, totalAmount, onOpen }: Th
     </div>
   )
 }
-
-export { swagathMark }

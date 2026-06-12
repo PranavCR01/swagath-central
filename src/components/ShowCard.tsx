@@ -1,7 +1,6 @@
 const STATUS_META = {
-  complete:   { label: 'Complete',    dot: '✓', bg: 'rgba(34,197,94,0.16)',   fg: '#22c55e' },
-  inprogress: { label: 'In Progress', dot: '◐', bg: 'rgba(245,158,11,0.16)',  fg: '#f59e0b' },
-  pending:    { label: 'Not Started', dot: '○', bg: 'rgba(255,255,255,0.05)', fg: 'rgba(255,255,255,0.38)' },
+  complete: { label: 'Complete',    dot: '✓', bg: 'rgba(34,197,94,0.16)',   fg: '#22c55e' },
+  pending:  { label: 'Not Started', dot: '○', bg: 'rgba(255,255,255,0.05)', fg: 'rgba(255,255,255,0.38)' },
 }
 
 function occColor(pct: number): string {

@@ -46,7 +46,7 @@ export default function SlipRow({
 }: SlipRowProps) {
   const sale = calcSale(Number(ob) || 0, Number(rec) || 0, Number(cb) || 0)
   const amount = calcAmount(sale, price)
-  const saleColor = sale < 0 ? 'var(--red)' : sale === 0 ? 'var(--text)' : 'var(--text)'
+  const saleColor = sale < 0 ? 'var(--red)' : 'var(--text)'
 
   return (
     <div style={{

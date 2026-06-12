@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { PRICES, COSTS } from './prices'
+import { calcParkingExpected } from './calculations'
 
 // ── DB column prefix -> price/cost/display-name maps ──────────────────────
 export const MC_PRICE: Record<string, number> = {
@@ -48,7 +49,7 @@ export const CD_NAME: Record<string, string> = {
 }
 
 export function toDateStr(d: Date): string {
-  return d.toISOString().slice(0, 10)
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
 }
 
 // last `days` calendar days, ending today, ascending
@@ -58,7 +59,7 @@ export function dateRange(days: number): string[] {
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
-    out.push(toDateStr(d))
+    out.push(d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }))
   }
   return out
 }
@@ -131,9 +132,7 @@ async function loadShowAggregates(theatreId: string, dates: string[]): Promise<S
     const cdRev = sumBySale(cd, CD_PRICE)
     const parkingReported = Number(pk?.reported_amount) || 0
     const parkingExpected = pk
-      ? (Number(pk.scooter_count) || 0) * PRICES.scooter
-      + (Number(pk.auto_count) || 0) * PRICES.auto
-      + (Number(pk.car_count) || 0) * PRICES.car
+      ? calcParkingExpected(Number(pk.scooter_count) || 0, Number(pk.auto_count) || 0, Number(pk.car_count) || 0)
       : 0
 
     return {
