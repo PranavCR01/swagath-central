@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom
 import { supabase } from '@/lib/supabase'
 import { useIdleTimeout } from '@/hooks/useIdleTimeout'
 import type { Session } from '@supabase/supabase-js'
+import { Sentry } from '@/lib/sentry'
 import LoginPage from '@/pages/LoginPage'
 import HomePage from '@/pages/HomePage'
 import DayPage from '@/pages/DayPage'
@@ -11,6 +12,30 @@ import DayClosePage from '@/pages/DayClosePage'
 import HistoryPage from '@/pages/HistoryPage'
 import InsightsPage from '@/pages/InsightsPage'
 import AISummaryPage from '@/pages/AISummaryPage'
+
+const ErrorFallback = () => (
+  <div style={{
+    minHeight: '100vh', background: 'var(--bg)', display: 'flex',
+    flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    gap: 16, padding: 24, fontFamily: 'Inter, sans-serif',
+  }}>
+    <div style={{ fontSize: 32 }}>⚠️</div>
+    <div style={{ color: 'var(--text)', fontSize: 18, fontWeight: 600 }}>Something went wrong</div>
+    <div style={{ color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>
+      The error has been reported. Please refresh the page.
+    </div>
+    <button
+      onClick={() => window.location.reload()}
+      style={{
+        marginTop: 8, height: 44, padding: '0 24px',
+        background: 'var(--accent)', color: 'var(--accent-ink)',
+        border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'pointer',
+      }}
+    >
+      Refresh
+    </button>
+  </div>
+)
 
 function ProtectedRoute() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
@@ -41,6 +66,7 @@ function RootRedirect() {
 export default function App() {
   return (
     <div className="t">
+    <Sentry.ErrorBoundary fallback={ErrorFallback}>
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -56,6 +82,7 @@ export default function App() {
         <Route path="*" element={<RootRedirect />} />
       </Routes>
     </BrowserRouter>
+    </Sentry.ErrorBoundary>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Sentry } from '@/lib/sentry'
 import type { Show } from '@/lib/types'
 
 export function useShows(dayId: string | null) {
@@ -26,6 +27,7 @@ export function useShows(dayId: string | null) {
 
       if (rawShowsError) {
         console.error(rawShowsError)
+        Sentry.captureException(rawShowsError)
         setError('Could not load shows. Please try again.')
         setLoading(false)
         return
@@ -46,9 +48,9 @@ export function useShows(dayId: string | null) {
         supabase.from('theatre_cool_drinks').select('show_id').in('show_id', showIds),
       ])
 
-      if (mcRes.error) console.error(mcRes.error)
-      if (pcRes.error) console.error(pcRes.error)
-      if (cdRes.error) console.error(cdRes.error)
+      if (mcRes.error) { console.error(mcRes.error); Sentry.captureException(mcRes.error) }
+      if (pcRes.error) { console.error(pcRes.error); Sentry.captureException(pcRes.error) }
+      if (cdRes.error) { console.error(cdRes.error); Sentry.captureException(cdRes.error) }
 
       const mcSet = new Set(mcRes.data?.map((r) => r.show_id) ?? [])
       const pcSet = new Set(pcRes.data?.map((r) => r.show_id) ?? [])

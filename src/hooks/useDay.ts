@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Sentry } from '@/lib/sentry'
 import type { Day } from '@/lib/types'
 
 export function useDay(theatreId: string, date: string) {
@@ -48,6 +49,7 @@ export function useDay(theatreId: string, date: string) {
           setDay(raced ?? null)
         } else {
           console.error(insertError)
+          Sentry.captureException(insertError)
           setError('Could not load this day. Please try again.')
         }
       } else {
