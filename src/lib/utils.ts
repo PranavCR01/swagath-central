@@ -20,3 +20,5 @@ export function getYesterdayIST(): string {
 export function safeIn(ids: string[]): string[] {
   return ids.length ? ids : ['__none__']
 }
+
+export const toNum = (s: string) => parseFloat(s) || 0
