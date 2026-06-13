@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import {
-  computeSlipTotal, computeShowTotal, computeDayTotal, computeBCash,
+  computeShowTotal, computeDayTotal, computeBCash,
   calcParkingExpected, calcParkingGap,
 } from '@/lib/calculations'
 import { loadSlipDataForShows } from '@/lib/loadSlipData'
+import { sumBySale, sumByCost, MC_PRICE, PC_PRICE, CD_PRICE, MC_COST, PC_COST, CD_COST } from '@/lib/insightsQueries'
 import { generateDayReportPdf } from '@/lib/pdfReport'
 import { toNum } from '@/lib/utils'
 import {
@@ -86,10 +87,10 @@ export default function DayClosePage() {
         supabase.from('theatre_staff_wages').select('id,staff_name,amount').eq('day_id', day.id),
       ])
 
-      type McR = { show_id: string; upi_amount: number; cash_amount: number }
-      type PcR = { show_id: string; upi_amount: number; cash_amount: number; bms_combo_amount: number }
-      type CdR = { show_id: string; upi_amount: number; cash_amount: number }
-      type PkR = { show_id: string; scooter_count: number; auto_count: number; car_count: number; upi_amount: number | null; cash_amount: number | null }
+      type McR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number }
+      type PcR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number; bms_combo_amount: number }
+      type CdR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number }
+      type PkR = Record<string, unknown> & { show_id: string; scooter_count: number; auto_count: number; car_count: number; upi_amount: number | null; cash_amount: number | null }
 
       const mcMap = Object.fromEntries((mcRows as McR[]).map(r => [r.show_id, r]))
       const pcMap = Object.fromEntries((pcRows as PcR[]).map(r => [r.show_id, r]))
@@ -98,17 +99,22 @@ export default function DayClosePage() {
 
       const summaries: ShowSummary[] = shows.map(s => {
         const mc = mcMap[s.id], pc = pcMap[s.id], cd = cdMap[s.id], pk = pkMap[s.id]
-        const mcTotal = mc ? computeSlipTotal(mc.upi_amount || 0, mc.cash_amount || 0) : 0
-        const popcornTotal = pc ? computeSlipTotal(pc.upi_amount || 0, pc.cash_amount || 0) + (pc.bms_combo_amount || 0) : 0
-        const cdTotal = cd ? computeSlipTotal(cd.upi_amount || 0, cd.cash_amount || 0) : 0
+        const mcTotal = sumBySale(mc ?? null, MC_PRICE)
+        const popcornTotal = sumBySale(pc ?? null, PC_PRICE) + (Number(pc?.bms_combo_amount) || 0)
+        const cdTotal = sumBySale(cd ?? null, CD_PRICE)
+        const mcCost = sumByCost(mc ?? null, MC_COST)
+        const pcCost = sumByCost(pc ?? null, PC_COST)
+        const cdCost = sumByCost(cd ?? null, CD_COST)
         const parkingReported = (pk?.upi_amount ?? 0) + (pk?.cash_amount ?? 0)
         const scooter = pk?.scooter_count ?? 0, auto = pk?.auto_count ?? 0, car = pk?.car_count ?? 0
         const expected = calcParkingExpected(scooter, auto, car)
+        const showProfit = (mcTotal + popcornTotal + cdTotal + expected) - (mcCost + pcCost + cdCost)
         return {
           showId: s.id, showNumber: s.show_number,
           startTime: s.start_time, movieName: s.movie_name,
           mcTotal, popcornTotal, cdTotal, parkingReported,
           showTotal: computeShowTotal(mcTotal, popcornTotal, cdTotal, parkingReported),
+          showProfit,
           isComplete: !!(mcMap[s.id] && pcMap[s.id] && cdMap[s.id]),
           scooterCount: scooter, autoCount: auto, carCount: car,
           parkingExpected: expected,

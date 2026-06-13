@@ -10,14 +10,14 @@ export const MC_PRICE: Record<string, number> = {
   jam_bun: PRICES.jam_bun, ckn_puff: PRICES.ckn_puff,
   samosa: PRICES.samosa, tin: PRICES.tin, frooty: PRICES.frooty,
   chips: PRICES.chips, frymes: PRICES.frymes, water: PRICES.water,
-  milkshake: PRICES.milkshake, kettle_chips: PRICES.kettle_chips, tins_mc: PRICES.tins_mc,
+  milkshake: PRICES.milkshake, kettle_chips: PRICES.kettle_chips,
 }
 export const MC_COST: Record<string, number> = {
   veg_puff: COSTS.veg_puff, egg_puff: COSTS.egg_puff, h_cake: COSTS.h_cake,
   jam_bun: COSTS.jam_bun, ckn_puff: COSTS.ckn_puff,
   samosa: COSTS.samosa, tin: COSTS.tin, frooty: COSTS.frooty,
   chips: COSTS.chips, frymes: COSTS.frymes, water: COSTS.water,
-  milkshake: COSTS.milkshake, kettle_chips: COSTS.kettle_chips, tins_mc: COSTS.tins_mc,
+  milkshake: COSTS.milkshake, kettle_chips: COSTS.kettle_chips,
 }
 export const MC_NAME: Record<string, string> = {
   veg_puff: 'Veg Puff', egg_puff: 'Egg Puff', h_cake: 'Honey Cake', jam_bun: 'Jam Bun',
@@ -73,6 +73,17 @@ export function sumBySale(row: Record<string, unknown> | null, priceMap: Record<
   for (const prefix in priceMap) {
     const sale = Number(row[`${prefix}_sale`]) || 0
     total += sale * priceMap[prefix]
+  }
+  return total
+}
+
+export function sumByCost(row: Record<string, unknown> | null, costMap: Record<string, number>): number {
+  if (!row) return 0
+  let total = 0
+  for (const prefix in costMap) {
+    const sale = Number(row[`${prefix}_sale`]) || 0
+    const wst = Number(row[`${prefix}_wst`]) || 0
+    total += (sale + wst) * costMap[prefix]
   }
   return total
 }

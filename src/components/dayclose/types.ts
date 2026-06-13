@@ -8,6 +8,7 @@ export interface ShowSummary {
   cdTotal: number
   parkingReported: number
   showTotal: number
+  showProfit: number
   isComplete: boolean
   scooterCount: number
   autoCount: number
