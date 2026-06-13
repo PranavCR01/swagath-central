@@ -10,7 +10,7 @@ import { sumBySale, sumByCost, MC_PRICE, PC_PRICE, CD_PRICE, MC_COST, PC_COST, C
 import { generateDayReportPdf } from '@/lib/pdfReport'
 import { toNum } from '@/lib/utils'
 import {
-  emptyExp, emptyUpi,
+  emptyExp, emptyUpi, inrFmt,
   type ExpState, type ShowSummary, type StaffRow, type UpiState,
 } from '@/components/dayclose/types'
 import DayCloseHeader from '@/components/dayclose/DayCloseHeader'
@@ -47,6 +47,8 @@ export default function DayClosePage() {
 
   // Live-computed totals — these update as the user types
   const totalSales = computeDayTotal(showSummaries.map(s => s.showTotal))
+  const totalProfit = showSummaries.reduce((s, v) => s + v.showProfit, 0)
+  const costOfGoods = totalSales - totalProfit
   const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.bmsUpi)
   const expObj = {
     wages: toNum(exp.wages),
@@ -57,6 +59,7 @@ export default function DayClosePage() {
     others_amount: toNum(exp.othersAmount),
   }
   const totalExpenses = Object.values(expObj).reduce((s, v) => s + v, 0)
+  const netProfit = totalProfit - totalExpenses
   // B.Cash uses theatre_expenses.wages only — staff wage rows are breakdown only, not additive
   const bCash = computeBCash(totalSales, expObj)
   const staffWagesTotal = staffRows.reduce((s, r) => s + toNum(r.amount), 0)
@@ -251,6 +254,53 @@ export default function DayClosePage() {
         <UpiBreakdownForm upi={upi} totalUpi={totalUpi} readOnly={readOnly} onChange={setUpiField} />
         <ExpensesForm exp={exp} othersDesc={othersDesc} readOnly={readOnly} onExpChange={setExpField} onOthersDescChange={setOthersDesc} />
         <StaffWagesForm staffRows={staffRows} setStaffRows={setStaffRows} readOnly={readOnly} staffWagesTotal={staffWagesTotal} />
+
+        <div style={{
+          background: 'var(--surface)', borderRadius: 'var(--r-card)',
+          border: '1px solid var(--card-border)', marginTop: 16, marginBottom: 20, padding: '14px 14px 12px',
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+            letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10,
+          }}>
+            NET PROFIT
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Gross Revenue</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
+              ₹{inrFmt.format(totalSales)}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Cost of Goods</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
+              ₹{inrFmt.format(costOfGoods)}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Gross Profit</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
+              ₹{inrFmt.format(totalProfit)}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Total Expenses</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
+              ₹{inrFmt.format(totalExpenses)}
+            </span>
+          </div>
+          <div style={{ height: 1, background: 'var(--card-border)', marginBottom: 8 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Net Profit</span>
+            <span style={{
+              fontFamily: 'var(--mono)', fontSize: 20, fontWeight: 700,
+              color: netProfit >= 0 ? 'var(--accent)' : 'var(--red)',
+            }}>
+              ₹{inrFmt.format(netProfit)}
+            </span>
+          </div>
+        </div>
+
         <ActionButtons
           readOnly={readOnly} saving={saving} isSaved={isSaved}
           onSave={handleSave} onDownload={downloadDayReport}
