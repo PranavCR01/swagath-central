@@ -188,7 +188,7 @@ export default function ShowPage() {
       ...rows,
       tins_mc: {
         ...rows.tins_mc,
-        ob: String(Math.max(0, (Number(rows.tins_mc?.ob) || 0) - delta)),
+        ob: String(Math.max(0, (Number(rows.tins_mc?.ob) || 0) + delta)),
       },
     }))
   }, [miscDrinksMc])

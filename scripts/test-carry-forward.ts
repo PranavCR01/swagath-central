@@ -231,17 +231,20 @@ async function run() {
         `got ${prevCd?.tin_cb}`)
     }
 
-    // ── 8. Simulate Show ${nextShowNum + 1} save with Misc Drinks delta-based OB sync ──
-    // Carry-forward OB for tins_mc = 4 (previous show's cb), misc_drinks_mc = 2
-    // -> adjusted ob stored = 4 - 2 = 2; rec=0, cb=1 -> sale = max(0, 2+0-1) = 1
-    console.log(`\n── Test: Misc Drinks delta-based Tins OB sync on save (Show ${nextShowNum + 1})`)
+    // ── 8. Simulate Show ${nextShowNum + 1} save with Misc Drinks live-sync to Tins OB ──
+    // Live useEffect applies the delta to rows.ob BEFORE save, so the stored OB
+    // already reflects the adjustment — no reconstruction on reload.
+    // MC: tins_mc adds misc drinks to OB (+delta). CD: c_tin removes misc drinks from OB (-delta).
+    console.log(`\n── Test: Misc Drinks live-sync to Tins OB on save (Show ${nextShowNum + 1})`)
     {
-      const carryOb = 4 // = previous show's tins_mc_cb
+      // MC: carryOb = 4 (previous show's tins_mc_cb), misc_drinks_mc = 2
+      // -> live-synced ob = 4 + 2 = 6; rec=0, cb=1 -> sale = max(0, 6+0-1) = 5
+      const mcCarryOb = 4
       const miscMc = 2
-      const adjustedOb = carryOb - miscMc // 2
-      const rec = 0
-      const cb = 1
-      const sale = Math.max(0, adjustedOb + rec - cb) // 1
+      const mcSyncedOb = mcCarryOb + miscMc // 6
+      const mcRec = 0
+      const mcCb = 1
+      const mcSale = Math.max(0, mcSyncedOb + mcRec - mcCb) // 5
 
       const mc2Flat: Record<string, number> = {}
       for (const k of MC_PREFIXES) {
@@ -251,10 +254,10 @@ async function run() {
         mc2Flat[`${k}_wst`] = 0
         mc2Flat[`${k}_sale`] = 0
       }
-      mc2Flat['tins_mc_ob'] = adjustedOb
-      mc2Flat['tins_mc_rec'] = rec
-      mc2Flat['tins_mc_cb'] = cb
-      mc2Flat['tins_mc_sale'] = sale
+      mc2Flat['tins_mc_ob'] = mcSyncedOb
+      mc2Flat['tins_mc_rec'] = mcRec
+      mc2Flat['tins_mc_cb'] = mcCb
+      mc2Flat['tins_mc_sale'] = mcSale
 
       const { error: mc2Err } = await supabase
         .from('theatre_main_counter')
@@ -264,21 +267,57 @@ async function run() {
         )
       if (mc2Err) { console.error('Show 2 main_counter save failed:', mc2Err.message); process.exit(1) }
 
-      const { data: saved } = await supabase
+      const { data: savedMc } = await supabase
         .from('theatre_main_counter')
         .select('tins_mc_ob, tins_mc_sale, misc_drinks_mc')
         .eq('show_id', show2Id)
         .single()
 
-      record('Stored tins_mc_ob = carryOb - miscDrinksMc (expect 2)', saved?.tins_mc_ob === 2,
-        `got ${saved?.tins_mc_ob}`)
-      record('Stored tins_mc_sale reflects adjusted OB (expect 1)', saved?.tins_mc_sale === 1,
-        `got ${saved?.tins_mc_sale}`)
+      record('Stored tins_mc_ob = carryOb + miscDrinksMc (expect 6)', savedMc?.tins_mc_ob === 6,
+        `got ${savedMc?.tins_mc_ob}`)
+      record('Stored tins_mc_sale reflects synced OB (expect 5)', savedMc?.tins_mc_sale === 5,
+        `got ${savedMc?.tins_mc_sale}`)
 
-      // Reconstruction check: reload should show raw OB = stored_ob + misc_drinks_mc (= 4 again)
-      const reconstructedOb = (saved?.tins_mc_ob ?? 0) + (saved?.misc_drinks_mc ?? 0)
-      record('Reconstructed display OB on reload (expect 4)', reconstructedOb === 4,
-        `got ${reconstructedOb}`)
+      // CD: carryOb = 12 (previous show's tin_cb), misc_drinks_cd = 2
+      // -> live-synced ob = 12 - 2 = 10; rec=0, cb=1 -> sale = max(0, 10+0-1) = 9
+      const cdCarryOb = 12
+      const miscCd = 2
+      const cdSyncedOb = cdCarryOb - miscCd // 10
+      const cdRec = 0
+      const cdCb = 1
+      const cdSale = Math.max(0, cdSyncedOb + cdRec - cdCb) // 9
+
+      const cd2Flat: Record<string, number> = {}
+      for (const k of CD_PREFIXES) {
+        cd2Flat[`${k}_ob`] = 0
+        cd2Flat[`${k}_rec`] = 0
+        cd2Flat[`${k}_cb`] = 0
+        cd2Flat[`${k}_wst`] = 0
+        cd2Flat[`${k}_sale`] = 0
+      }
+      cd2Flat['tin_ob'] = cdSyncedOb
+      cd2Flat['tin_rec'] = cdRec
+      cd2Flat['tin_cb'] = cdCb
+      cd2Flat['tin_sale'] = cdSale
+
+      const { error: cd2Err } = await supabase
+        .from('theatre_cool_drinks')
+        .upsert(
+          { show_id: show2Id, ...cd2Flat, upi_amount: 0, cash_amount: 0, misc_drinks_cd: miscCd },
+          { onConflict: 'show_id' },
+        )
+      if (cd2Err) { console.error('Show 2 cool_drinks save failed:', cd2Err.message); process.exit(1) }
+
+      const { data: savedCd } = await supabase
+        .from('theatre_cool_drinks')
+        .select('tin_ob, tin_sale, misc_drinks_cd')
+        .eq('show_id', show2Id)
+        .single()
+
+      record('Stored tin_ob = carryOb - miscDrinksCd (expect 10)', savedCd?.tin_ob === 10,
+        `got ${savedCd?.tin_ob}`)
+      record('Stored tin_sale reflects synced OB (expect 9)', savedCd?.tin_sale === 9,
+        `got ${savedCd?.tin_sale}`)
     }
 
   } finally {
