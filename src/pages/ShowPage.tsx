@@ -192,9 +192,9 @@ export default function ShowPage() {
     prevMiscMcRef.current = next
     setMcRows(rows => ({
       ...rows,
-      tins_mc: {
-        ...rows.tins_mc,
-        ob: String(Math.max(0, (Number(rows.tins_mc?.ob) || 0) + delta)),
+      tin: {
+        ...rows.tin,
+        ob: String(Math.max(0, (Number(rows.tin?.ob) || 0) + delta)),
       },
     }))
   }, [miscDrinksMc])

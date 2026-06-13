@@ -17,7 +17,6 @@ export const MAIN_ITEMS = [
   { id: 'mshake',    name: 'Milkshake',    price: PRICES.milkshake    },
   { id: 'frooty',    name: 'Frooty',       price: PRICES.frooty       },
   { id: 'tin',       name: 'Tins',         price: PRICES.tin          },
-  { id: 'tins_mc',   name: 'Tins (MC)',    price: PRICES.tins_mc      },
 ]
 
 export const POPCORN_ITEMS = [
@@ -59,7 +58,6 @@ export const MC_DB_KEY: Record<string, string> = {
   water:   'water',
   mshake:  'milkshake',
   kettle:  'kettle_chips',
-  tins_mc: 'tins_mc',
 }
 export const PC_DB_KEY: Record<string, string> = {
   cone_s: 'cone_60', cone_m: 'cone_130', cone_l: 'cone_200',

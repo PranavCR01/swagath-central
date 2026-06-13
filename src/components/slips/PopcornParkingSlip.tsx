@@ -70,6 +70,7 @@ export default function PopcornParkingSlip({
       <ParkingRow label="Auto"    rate={PRICES.auto}    count={pkAuto}    onChange={setPkAuto} />
       <ParkingRow label="Car"     rate={PRICES.car}     count={pkCar}     onChange={setPkCar} />
 
+      <SectionDivider label="Parking Payment" />
       <PaymentSection
         upi={pkUpi} cash={pkCash} total={pkSlipTotal} slipTotal={parkingExpected}
         onUpi={onPkUpi} onCash={onPkCash}
@@ -112,6 +113,7 @@ export default function PopcornParkingSlip({
         </div>
       )}
 
+      <SectionDivider label="Popcorn Payment" />
       <PaymentSection
         upi={pcUpi} cash={pcCash} total={pcSlipTotal} slipTotal={pcTotal}
         onUpi={onPcUpi} onCash={onPcCash}
