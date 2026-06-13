@@ -3,7 +3,7 @@ import { calcSale, calcAmount } from '@/lib/calculations'
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 
-function NumCell({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function NumCell({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [focus, setFocus] = useState(false)
   return (
     <input
@@ -97,6 +97,56 @@ export default function SlipRow({
       {note && (
         <div style={{ fontSize: 10, color: 'var(--muted)', textAlign: 'right', padding: '0 0 6px' }}>
           {note}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Misc Drinks variant — unit count input, amount = count × price (display only, not in total)
+export interface MiscDrinksRowProps {
+  label: string
+  price: number
+  value: string
+  onChange: (v: string) => void
+}
+
+export function MiscDrinksRow({ label, price, value, onChange }: MiscDrinksRowProps) {
+  const count = Number(value) || 0
+  const amount = count * price
+
+  return (
+    <div style={{ borderBottom: '1px solid var(--card-border)' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        minHeight: 52, padding: '6px 0',
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>{label}</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>₹{price} each</div>
+        </div>
+
+        <NumCell value={value} onChange={onChange} />
+
+        {/* REC / CB / WST placeholders */}
+        <div style={{ width: 52, flexShrink: 0 }} />
+        <div style={{ width: 52, flexShrink: 0 }} />
+        <div style={{ width: 52, flexShrink: 0 }} />
+
+        {/* SALE placeholder */}
+        <div style={{ width: 36, flexShrink: 0 }} />
+
+        <div style={{
+          width: 64, flexShrink: 0, textAlign: 'right',
+          fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 600,
+          color: amount > 0 ? 'var(--accent)' : 'var(--muted)',
+        }}>
+          {amount === 0 ? '—' : '₹' + inrFmt.format(amount)}
+        </div>
+      </div>
+      {count > 0 && (
+        <div style={{ fontSize: 10, color: 'var(--muted)', textAlign: 'right', padding: '0 0 6px' }}>
+          −{count} from Tins OB (not in total)
         </div>
       )}
     </div>

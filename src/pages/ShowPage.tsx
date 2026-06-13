@@ -92,10 +92,11 @@ export default function ShowPage() {
       const pkData = pkRes.data as ParkingRow | null
 
       if (mcData) {
-        setMcRows(flatToRows(mcData as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY))
+        const miscMc = Number(mcData.misc_drinks_mc) || 0
+        setMcRows(flatToRows(mcData as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY, { tins_mc: miscMc }))
         setMcUpi(mcData.upi_amount ? String(mcData.upi_amount) : '')
         setMcCash(mcData.cash_amount ? String(mcData.cash_amount) : '')
-        setMiscDrinksMc(mcData.misc_drinks_mc ? String(mcData.misc_drinks_mc) : '')
+        setMiscDrinksMc(miscMc ? String(miscMc) : '')
         setHasMc(true)
       }
       if (pcData) {
@@ -106,10 +107,11 @@ export default function ShowPage() {
         setHasPc(true)
       }
       if (cdData) {
-        setCdRows(flatToRows(cdData as Record<string, unknown>, CD_ALL, CD_DB_KEY))
+        const miscCd = Number(cdData.misc_drinks_cd) || 0
+        setCdRows(flatToRows(cdData as Record<string, unknown>, CD_ALL, CD_DB_KEY, { c_tin: miscCd }))
         setCdUpi(cdData.upi_amount ? String(cdData.upi_amount) : '')
         setCdCash(cdData.cash_amount ? String(cdData.cash_amount) : '')
-        setMiscDrinksCd(cdData.misc_drinks_cd ? String(cdData.misc_drinks_cd) : '')
+        setMiscDrinksCd(miscCd ? String(miscCd) : '')
         setHasCd(true)
       }
       if (pkData) {
@@ -197,7 +199,7 @@ export default function ShowPage() {
       .upsert(
         {
           show_id: showId!,
-          ...rowsToFlat(mcRows, MAIN_ITEMS, MC_DB_KEY),
+          ...rowsToFlat(mcRows, MAIN_ITEMS, MC_DB_KEY, { tins_mc: Number(miscDrinksMc) || 0 }),
           upi_amount: Number(mcUpi) || 0,
           cash_amount: Number(mcCash) || 0,
           misc_drinks_mc: Number(miscDrinksMc) || 0,
@@ -245,7 +247,7 @@ export default function ShowPage() {
       .upsert(
         {
           show_id: showId!,
-          ...rowsToFlat(cdRows, CD_ALL, CD_DB_KEY),
+          ...rowsToFlat(cdRows, CD_ALL, CD_DB_KEY, { c_tin: Number(miscDrinksCd) || 0 }),
           upi_amount: Number(cdUpi) || 0,
           cash_amount: Number(cdCash) || 0,
           misc_drinks_cd: Number(miscDrinksCd) || 0,

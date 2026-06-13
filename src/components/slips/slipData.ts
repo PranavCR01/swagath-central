@@ -102,12 +102,14 @@ export function flatToRows(
   data: Record<string, unknown>,
   items: { id: string }[],
   keyMap: Record<string, string>,
+  obAdjustments?: Record<string, number>,
 ): TabRows {
   const rows = emptyRows(items)
   for (const item of items) {
     const k = keyMap[item.id]
+    const adj = obAdjustments?.[item.id] ?? 0
     rows[item.id] = {
-      ob:  data[`${k}_ob`]  != null ? String(data[`${k}_ob`])  : '',
+      ob:  data[`${k}_ob`]  != null ? String(Number(data[`${k}_ob`]) + adj) : '',
       rec: data[`${k}_rec`] != null ? String(data[`${k}_rec`]) : '',
       cb:  data[`${k}_cb`]  != null ? String(data[`${k}_cb`])  : '',
       wst: String(data[`${k}_wst`] ?? 0),
@@ -120,12 +122,14 @@ export function rowsToFlat(
   rows: TabRows,
   items: { id: string }[],
   keyMap: Record<string, string>,
+  obAdjustments?: Record<string, number>,
 ): Record<string, number> {
   const out: Record<string, number> = {}
   for (const item of items) {
     const k = keyMap[item.id]
     const r = rows[item.id] ?? { ob: '', rec: '', cb: '', wst: '' }
-    const ob  = Number(r.ob)  || 0
+    const adj = obAdjustments?.[item.id] ?? 0
+    const ob  = (Number(r.ob) || 0) - adj
     const rec = Number(r.rec) || 0
     const cb  = Number(r.cb)  || 0
     const wst = Math.max(0, Number(r.wst) || 0)

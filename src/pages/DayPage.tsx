@@ -53,7 +53,7 @@ export default function DayPage() {
   const [showDate, setShowDate] = useState(getTodayIST())
   const [dateFocus, setDateFocus] = useState(false)
   const [timeFocus, setTimeFocus] = useState(false)
-  const [startTime, setStartTime] = useState('')
+  const [startTime, setStartTime] = useState('10:00')
   const [movieName, setMovieName] = useState('')
   const [language, setLanguage] = useState('Kannada')
   const [isFanShow, setIsFanShow] = useState(false)
@@ -99,7 +99,7 @@ export default function DayPage() {
   function openForm() {
     setEditingShow(null)
     setShowDate(getTodayIST())
-    setStartTime(''); setMovieName(''); setLanguage('Kannada')
+    setStartTime('10:00'); setMovieName(''); setLanguage('Kannada')
     setIsFanShow(false)
     setBoxTickets(''); setGoldTickets(''); setSilverTickets('')
     setFormError(''); setShowForm(true)
