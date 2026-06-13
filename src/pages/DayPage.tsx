@@ -149,9 +149,44 @@ export default function DayPage() {
       setSaving(false)
       if (error) { console.error(error); setFormError('Could not save show. Please try again.'); return }
     } else {
+      let targetDayId = day!.id
+
+      if (showDate !== date) {
+        console.log('[handleSubmitShow] showDate:', showDate, '| date param:', date, '| theatreId:', theatreId)
+        const { data: existingDay } = await supabase
+          .from('theatre_days')
+          .select('id')
+          .eq('theatre_id', theatreId!)
+          .eq('date', showDate)
+          .maybeSingle()
+
+        if (existingDay) {
+          targetDayId = existingDay.id
+        } else {
+          const { data: newDay, error: dayInsertError } = await supabase
+            .from('theatre_days')
+            .insert({ theatre_id: theatreId!, date: showDate })
+            .select('id')
+            .single()
+
+          if (dayInsertError || !newDay) {
+            setSaving(false)
+            setFormError('Failed to create day record for selected date')
+            return
+          }
+          targetDayId = newDay.id
+        }
+      }
+
+      // Show count for the target day (may differ from the current URL day)
+      const { count } = await supabase
+        .from('theatre_shows')
+        .select('id', { count: 'exact', head: true })
+        .eq('day_id', targetDayId)
+
       const { error } = await supabase.from('theatre_shows').insert({
-        day_id: day!.id,
-        show_number: shows.length + 1,
+        day_id: targetDayId,
+        show_number: (count ?? 0) + 1,
         ...ticketPayload,
       })
       setSaving(false)
