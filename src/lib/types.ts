@@ -34,7 +34,8 @@ export interface ParkingRow {
   scooter_count: number
   auto_count: number
   car_count: number
-  reported_amount: number | null
+  upi_amount: number | null
+  cash_amount: number | null
 }
 
 export interface Theatre {

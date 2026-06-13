@@ -80,14 +80,14 @@ export default function HistoryPage() {
         supabase.from('theatre_main_counter').select('show_id,upi_amount,cash_amount').in('show_id', showIds),
         supabase.from('theatre_popcorn').select('show_id,upi_amount,cash_amount').in('show_id', showIds),
         supabase.from('theatre_cool_drinks').select('show_id,upi_amount,cash_amount').in('show_id', showIds),
-        supabase.from('theatre_parking').select('show_id,reported_amount').in('show_id', showIds),
+        supabase.from('theatre_parking').select('show_id,upi_amount,cash_amount').in('show_id', showIds),
       ])
       type SlipR = { show_id: string; upi_amount: number; cash_amount: number }
-      type PkR = { show_id: string; reported_amount: number | null }
+      type PkR = { show_id: string; upi_amount: number | null; cash_amount: number | null }
       for (const r of (mc.data ?? []) as SlipR[]) addToDay(r.show_id, (r.upi_amount || 0) + (r.cash_amount || 0))
       for (const r of (pc.data ?? []) as SlipR[]) addToDay(r.show_id, (r.upi_amount || 0) + (r.cash_amount || 0))
       for (const r of (cd.data ?? []) as SlipR[]) addToDay(r.show_id, (r.upi_amount || 0) + (r.cash_amount || 0))
-      for (const r of (pk.data ?? []) as PkR[]) addToDay(r.show_id, r.reported_amount || 0)
+      for (const r of (pk.data ?? []) as PkR[]) addToDay(r.show_id, (r.upi_amount || 0) + (r.cash_amount || 0))
     }
 
     // Expenses (to determine closed status + B.Cash)

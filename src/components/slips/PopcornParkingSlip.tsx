@@ -2,7 +2,7 @@ import { PRICES } from '@/lib/prices'
 import { calcParkingExpected, calcParkingGap } from '@/lib/calculations'
 import SlipRow, { LumpRow } from '@/components/SlipRow'
 import type { TabRows } from '@/lib/types'
-import { ColHeaders, PaymentSection, PayRow, TotalCard, SectionDivider, ParkingRow } from './SlipShared'
+import { ColHeaders, PaymentSection, TotalCard, SectionDivider, ParkingRow } from './SlipShared'
 import { POPCORN_ITEMS, tabTotal, updateRow, rupee } from './slipData'
 
 interface PopcornParkingSlipProps {
@@ -17,16 +17,18 @@ interface PopcornParkingSlipProps {
   pkScooter: string
   pkAuto: string
   pkCar: string
-  pkReported: string
+  pkUpi: string
+  pkCash: string
   setPkScooter: (v: string) => void
   setPkAuto: (v: string) => void
   setPkCar: (v: string) => void
-  setPkReported: (v: string) => void
+  onPkUpi: (v: string) => void
+  onPkCash: (v: string) => void
 }
 
 export default function PopcornParkingSlip({
   pcRows, setPcRows, pcBms, setPcBms, pcUpi, pcCash, onPcUpi, onPcCash,
-  pkScooter, pkAuto, pkCar, pkReported, setPkScooter, setPkAuto, setPkCar, setPkReported,
+  pkScooter, pkAuto, pkCar, pkUpi, pkCash, setPkScooter, setPkAuto, setPkCar, onPkUpi, onPkCash,
 }: PopcornParkingSlipProps) {
   const pcTotal = tabTotal(pcRows, POPCORN_ITEMS) // BMS excluded from total
   const pcSlipTotal = (Number(pcUpi) || 0) + (Number(pcCash) || 0)
@@ -34,8 +36,9 @@ export default function PopcornParkingSlip({
   const parkingExpected = calcParkingExpected(
     Number(pkScooter) || 0, Number(pkAuto) || 0, Number(pkCar) || 0,
   )
-  const parkingGap = pkReported !== ''
-    ? calcParkingGap(parkingExpected, Number(pkReported) || 0)
+  const pkSlipTotal = (Number(pkUpi) || 0) + (Number(pkCash) || 0)
+  const parkingGap = (pkUpi !== '' || pkCash !== '')
+    ? calcParkingGap(parkingExpected, pkSlipTotal)
     : null
 
   return (
@@ -67,26 +70,10 @@ export default function PopcornParkingSlip({
       <ParkingRow label="Auto"    rate={PRICES.auto}    count={pkAuto}    onChange={setPkAuto} />
       <ParkingRow label="Car"     rate={PRICES.car}     count={pkCar}     onChange={setPkCar} />
 
-      {/* Expected + Reported */}
-      <div style={{
-        background: 'var(--surface)', border: '1px solid var(--card-border)',
-        borderRadius: 'var(--r-card)', padding: '12px 16px', margin: '10px 0 4px',
-      }}>
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: 10,
-        }}>
-          <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>
-            Expected collection
-          </span>
-          <span style={{
-            fontFamily: 'var(--mono)', fontSize: 15, fontWeight: 600, color: 'var(--muted)',
-          }}>
-            {rupee(parkingExpected)}
-          </span>
-        </div>
-        <PayRow label="Reported" value={pkReported} onChange={setPkReported} />
-      </div>
+      <PaymentSection
+        upi={pkUpi} cash={pkCash} total={pkSlipTotal} slipTotal={parkingExpected}
+        onUpi={onPkUpi} onCash={onPkCash}
+      />
 
       {/* Gap indicator */}
       {parkingGap !== null && (

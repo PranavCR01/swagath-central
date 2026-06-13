@@ -57,13 +57,16 @@ export default function ShowPage() {
   const [pkScooter, setPkScooter] = useState('')
   const [pkAuto, setPkAuto] = useState('')
   const [pkCar, setPkCar] = useState('')
-  const [pkReported, setPkReported] = useState('')
+  const [pkUpi, setPkUpi] = useState('')
+  const [pkCash, setPkCash] = useState('')
   const [pcSaving, setPcSaving] = useState(false)
 
   // Cool drinks state
   const [cdRows, setCdRows] = useState<TabRows>(emptyRows(CD_ALL))
   const [cdUpi, setCdUpi] = useState('')
   const [cdCash, setCdCash] = useState('')
+  const [cdLiveUpi, setCdLiveUpi] = useState('')
+  const [cdLiveCash, setCdLiveCash] = useState('')
   const [miscDrinksCd, setMiscDrinksCd] = useState('')
   const [cdSaving, setCdSaving] = useState(false)
   const prevMiscCdRef = useRef(0)
@@ -114,6 +117,8 @@ export default function ShowPage() {
         setCdRows(flatToRows(cdData as Record<string, unknown>, CD_ALL, CD_DB_KEY))
         setCdUpi(cdData.upi_amount ? String(cdData.upi_amount) : '')
         setCdCash(cdData.cash_amount ? String(cdData.cash_amount) : '')
+        setCdLiveUpi(cdData.live_upi_amount ? String(cdData.live_upi_amount) : '')
+        setCdLiveCash(cdData.live_cash_amount ? String(cdData.live_cash_amount) : '')
         prevMiscCdRef.current = miscCd
         setMiscDrinksCd(miscCd ? String(miscCd) : '')
         setHasCd(true)
@@ -122,7 +127,8 @@ export default function ShowPage() {
         setPkScooter(pkData.scooter_count ? String(pkData.scooter_count) : '')
         setPkAuto(pkData.auto_count ? String(pkData.auto_count) : '')
         setPkCar(pkData.car_count ? String(pkData.car_count) : '')
-        setPkReported(pkData.reported_amount != null ? String(pkData.reported_amount) : '')
+        setPkUpi(pkData.upi_amount ? String(pkData.upi_amount) : '')
+        setPkCash(pkData.cash_amount ? String(pkData.cash_amount) : '')
       }
 
       // OB carry-forward — only when no existing data and show_number > 1
@@ -265,7 +271,8 @@ export default function ShowPage() {
           scooter_count: Number(pkScooter) || 0,
           auto_count: Number(pkAuto) || 0,
           car_count: Number(pkCar) || 0,
-          reported_amount: pkReported !== '' ? Number(pkReported) : null,
+          upi_amount: Number(pkUpi) || 0,
+          cash_amount: Number(pkCash) || 0,
         },
         { onConflict: 'show_id' },
       ).then(r => r.error),
@@ -285,6 +292,8 @@ export default function ShowPage() {
           ...rowsToFlat(cdRows, CD_ALL, CD_DB_KEY),
           upi_amount: Number(cdUpi) || 0,
           cash_amount: Number(cdCash) || 0,
+          live_upi_amount: Number(cdLiveUpi) || 0,
+          live_cash_amount: Number(cdLiveCash) || 0,
           misc_drinks_cd: Number(miscDrinksCd) || 0,
         },
         { onConflict: 'show_id' },
@@ -434,8 +443,10 @@ export default function ShowPage() {
             pcRows={pcRows} setPcRows={setPcRows}
             pcBms={pcBms} setPcBms={setPcBms}
             pcUpi={pcUpi} pcCash={pcCash} onPcUpi={setPcUpi} onPcCash={setPcCash}
-            pkScooter={pkScooter} pkAuto={pkAuto} pkCar={pkCar} pkReported={pkReported}
-            setPkScooter={setPkScooter} setPkAuto={setPkAuto} setPkCar={setPkCar} setPkReported={setPkReported}
+            pkScooter={pkScooter} pkAuto={pkAuto} pkCar={pkCar}
+            pkUpi={pkUpi} pkCash={pkCash}
+            setPkScooter={setPkScooter} setPkAuto={setPkAuto} setPkCar={setPkCar}
+            onPkUpi={setPkUpi} onPkCash={setPkCash}
           />
         )}
 
@@ -443,6 +454,7 @@ export default function ShowPage() {
           <CoolDrinksSlip
             rows={cdRows} setRows={setCdRows}
             upi={cdUpi} cash={cdCash} onUpi={setCdUpi} onCash={setCdCash}
+            liveUpi={cdLiveUpi} liveCash={cdLiveCash} onLiveUpi={setCdLiveUpi} onLiveCash={setCdLiveCash}
             miscDrinksCd={miscDrinksCd} onMiscDrinksCd={setMiscDrinksCd}
           />
         )}

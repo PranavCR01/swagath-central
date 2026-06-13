@@ -124,7 +124,7 @@ async function dayRevenue(theatreId: string, date: string): Promise<number | nul
     const mcTotal = sumBySale(s.mc, MC_PRICE)
     const popcornTotal = sumBySale(s.pc, PC_PRICE) + (Number(s.pc?.bms_combo_amount) || 0)
     const cdTotal = sumBySale(s.cd, CD_PRICE)
-    const parkingReported = Number(s.pk?.reported_amount) || 0
+    const parkingReported = (Number(s.pk?.upi_amount) || 0) + (Number(s.pk?.cash_amount) || 0)
     total += computeShowTotal(mcTotal, popcornTotal, cdTotal, parkingReported)
   }
   return total
@@ -185,7 +185,7 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
     const scooter = Number(s.pk?.scooter_count) || 0
     const auto = Number(s.pk?.auto_count) || 0
     const car = Number(s.pk?.car_count) || 0
-    const reported = Number(s.pk?.reported_amount) || 0
+    const reported = (Number(s.pk?.upi_amount) || 0) + (Number(s.pk?.cash_amount) || 0)
     const expected = calcParkingExpected(scooter, auto, car)
 
     mainCounterTotal += mcTotal
@@ -297,7 +297,7 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
     }
     const gapShows = loaded.shows.filter(s => {
       const expected = calcParkingExpected(Number(s.pk?.scooter_count) || 0, Number(s.pk?.auto_count) || 0, Number(s.pk?.car_count) || 0)
-      return calcParkingGap(expected, Number(s.pk?.reported_amount) || 0) > 0
+      return calcParkingGap(expected, (Number(s.pk?.upi_amount) || 0) + (Number(s.pk?.cash_amount) || 0)) > 0
     }).length
     parking = { gap: parkingGap, shows: gapShows, consecutive: Math.max(consecutive, 1), trendingUp: consecutive >= 3 }
   }

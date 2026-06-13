@@ -78,13 +78,13 @@ export default function DayPage() {
         supabase.from('theatre_main_counter').select('upi_amount,cash_amount').in('show_id', showIds),
         supabase.from('theatre_popcorn').select('upi_amount,cash_amount').in('show_id', showIds),
         supabase.from('theatre_cool_drinks').select('upi_amount,cash_amount').in('show_id', showIds),
-        supabase.from('theatre_parking').select('reported_amount').in('show_id', showIds),
+        supabase.from('theatre_parking').select('upi_amount,cash_amount').in('show_id', showIds),
       ])
       let total = 0
       for (const r of mcRes.data ?? []) total += (r.upi_amount || 0) + (r.cash_amount || 0)
       for (const r of pcRes.data ?? []) total += (r.upi_amount || 0) + (r.cash_amount || 0)
       for (const r of cdRes.data ?? []) total += (r.upi_amount || 0) + (r.cash_amount || 0)
-      for (const r of pkRes.data ?? []) total += (r.reported_amount || 0)
+      for (const r of pkRes.data ?? []) total += (r.upi_amount || 0) + (r.cash_amount || 0)
       setRunningTotal(total)
     }
     fetchTotals()
@@ -152,7 +152,6 @@ export default function DayPage() {
       let targetDayId = day!.id
 
       if (showDate !== date) {
-        console.log('[handleSubmitShow] showDate:', showDate, '| date param:', date, '| theatreId:', theatreId)
         const { data: existingDay } = await supabase
           .from('theatre_days')
           .select('id')

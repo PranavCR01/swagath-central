@@ -89,7 +89,7 @@ export default function DayClosePage() {
       type McR = { show_id: string; upi_amount: number; cash_amount: number }
       type PcR = { show_id: string; upi_amount: number; cash_amount: number; bms_combo_amount: number }
       type CdR = { show_id: string; upi_amount: number; cash_amount: number }
-      type PkR = { show_id: string; scooter_count: number; auto_count: number; car_count: number; reported_amount: number | null }
+      type PkR = { show_id: string; scooter_count: number; auto_count: number; car_count: number; upi_amount: number | null; cash_amount: number | null }
 
       const mcMap = Object.fromEntries((mcRows as McR[]).map(r => [r.show_id, r]))
       const pcMap = Object.fromEntries((pcRows as PcR[]).map(r => [r.show_id, r]))
@@ -101,7 +101,7 @@ export default function DayClosePage() {
         const mcTotal = mc ? computeSlipTotal(mc.upi_amount || 0, mc.cash_amount || 0) : 0
         const popcornTotal = pc ? computeSlipTotal(pc.upi_amount || 0, pc.cash_amount || 0) + (pc.bms_combo_amount || 0) : 0
         const cdTotal = cd ? computeSlipTotal(cd.upi_amount || 0, cd.cash_amount || 0) : 0
-        const parkingReported = pk?.reported_amount ?? 0
+        const parkingReported = (pk?.upi_amount ?? 0) + (pk?.cash_amount ?? 0)
         const scooter = pk?.scooter_count ?? 0, auto = pk?.auto_count ?? 0, car = pk?.car_count ?? 0
         const expected = calcParkingExpected(scooter, auto, car)
         return {
@@ -113,7 +113,7 @@ export default function DayClosePage() {
           scooterCount: scooter, autoCount: auto, carCount: car,
           parkingExpected: expected,
           parkingGap: calcParkingGap(expected, parkingReported),
-          parkingMissing: pk === undefined || pk.reported_amount === null,
+          parkingMissing: pk === undefined || (pk.upi_amount === null && pk.cash_amount === null),
           boxTickets: s.box_tickets ?? 0,
           goldTickets: s.gold_tickets ?? 0,
           silverTickets: s.silver_tickets ?? 0,

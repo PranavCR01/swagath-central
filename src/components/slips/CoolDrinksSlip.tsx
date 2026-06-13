@@ -11,16 +11,24 @@ interface CoolDrinksSlipProps {
   cash: string
   onUpi: (v: string) => void
   onCash: (v: string) => void
+  liveUpi: string
+  liveCash: string
+  onLiveUpi: (v: string) => void
+  onLiveCash: (v: string) => void
   miscDrinksCd: string
   onMiscDrinksCd: (v: string) => void
 }
 
 export default function CoolDrinksSlip({
   rows, setRows, upi, cash, onUpi, onCash,
+  liveUpi, liveCash, onLiveUpi, onLiveCash,
   miscDrinksCd, onMiscDrinksCd,
 }: CoolDrinksSlipProps) {
   const total = tabTotal(rows, CD_ALL)
   const slipTotal = (Number(upi) || 0) + (Number(cash) || 0)
+  const drinksTotal = tabTotal(rows, CD_ALL.filter(i => i.section === 'drinks'))
+  const liveTotal = tabTotal(rows, CD_ALL.filter(i => i.section === 'live'))
+  const liveSlipTotal = (Number(liveUpi) || 0) + (Number(liveCash) || 0)
 
   return (
     <>
@@ -61,11 +69,18 @@ export default function CoolDrinksSlip({
         />
       ))}
 
+      <SectionDivider label="Live Counter Payment" />
+      <PaymentSection
+        upi={liveUpi} cash={liveCash} total={liveSlipTotal} slipTotal={liveTotal}
+        onUpi={onLiveUpi} onCash={onLiveCash}
+      />
+
       <MiscDrinksRow label="Misc Drinks (CD)" price={PRICES.cd_tin} value={miscDrinksCd} onChange={onMiscDrinksCd} />
 
       <TotalCard label="Cool Drinks Total" amount={total} />
+      <SectionDivider label="Drinks Payment" />
       <PaymentSection
-        upi={upi} cash={cash} total={slipTotal} slipTotal={total}
+        upi={upi} cash={cash} total={slipTotal} slipTotal={drinksTotal}
         onUpi={onUpi} onCash={onCash}
       />
       <div style={{ height: 16 }} />
