@@ -45,6 +45,7 @@ export default function ShowPage() {
   const [mcCash, setMcCash] = useState('')
   const [miscDrinksMc, setMiscDrinksMc] = useState('')
   const [mcSaving, setMcSaving] = useState(false)
+  const prevMiscMcRef = useRef(0)
 
   // Popcorn state
   const [pcRows, setPcRows] = useState<TabRows>(emptyRows(POPCORN_ITEMS))
@@ -65,6 +66,7 @@ export default function ShowPage() {
   const [cdCash, setCdCash] = useState('')
   const [miscDrinksCd, setMiscDrinksCd] = useState('')
   const [cdSaving, setCdSaving] = useState(false)
+  const prevMiscCdRef = useRef(0)
 
   // ── Load on mount ───────────────────────────────────────────────
   useEffect(() => {
@@ -93,9 +95,10 @@ export default function ShowPage() {
 
       if (mcData) {
         const miscMc = Number(mcData.misc_drinks_mc) || 0
-        setMcRows(flatToRows(mcData as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY, { tins_mc: miscMc }))
+        setMcRows(flatToRows(mcData as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY))
         setMcUpi(mcData.upi_amount ? String(mcData.upi_amount) : '')
         setMcCash(mcData.cash_amount ? String(mcData.cash_amount) : '')
+        prevMiscMcRef.current = miscMc
         setMiscDrinksMc(miscMc ? String(miscMc) : '')
         setHasMc(true)
       }
@@ -108,9 +111,10 @@ export default function ShowPage() {
       }
       if (cdData) {
         const miscCd = Number(cdData.misc_drinks_cd) || 0
-        setCdRows(flatToRows(cdData as Record<string, unknown>, CD_ALL, CD_DB_KEY, { c_tin: miscCd }))
+        setCdRows(flatToRows(cdData as Record<string, unknown>, CD_ALL, CD_DB_KEY))
         setCdUpi(cdData.upi_amount ? String(cdData.upi_amount) : '')
         setCdCash(cdData.cash_amount ? String(cdData.cash_amount) : '')
+        prevMiscCdRef.current = miscCd
         setMiscDrinksCd(miscCd ? String(miscCd) : '')
         setHasCd(true)
       }
@@ -173,6 +177,37 @@ export default function ShowPage() {
     return () => { cancelled.current = true }
   }, [showId, theatreId])
 
+  // ── Live-sync Misc Drinks count to Tins OB ────────────────────────
+  useEffect(() => {
+    const next = Number(miscDrinksMc) || 0
+    const prev = prevMiscMcRef.current
+    const delta = next - prev
+    if (delta === 0) return
+    prevMiscMcRef.current = next
+    setMcRows(rows => ({
+      ...rows,
+      tins_mc: {
+        ...rows.tins_mc,
+        ob: String(Math.max(0, (Number(rows.tins_mc?.ob) || 0) - delta)),
+      },
+    }))
+  }, [miscDrinksMc])
+
+  useEffect(() => {
+    const next = Number(miscDrinksCd) || 0
+    const prev = prevMiscCdRef.current
+    const delta = next - prev
+    if (delta === 0) return
+    prevMiscCdRef.current = next
+    setCdRows(rows => ({
+      ...rows,
+      c_tin: {
+        ...rows.c_tin,
+        ob: String(Math.max(0, (Number(rows.c_tin?.ob) || 0) - delta)),
+      },
+    }))
+  }, [miscDrinksCd])
+
   // ── Toast helper ────────────────────────────────────────────────
   function showToast(msg: string) {
     setToast(msg)
@@ -199,7 +234,7 @@ export default function ShowPage() {
       .upsert(
         {
           show_id: showId!,
-          ...rowsToFlat(mcRows, MAIN_ITEMS, MC_DB_KEY, { tins_mc: Number(miscDrinksMc) || 0 }),
+          ...rowsToFlat(mcRows, MAIN_ITEMS, MC_DB_KEY),
           upi_amount: Number(mcUpi) || 0,
           cash_amount: Number(mcCash) || 0,
           misc_drinks_mc: Number(miscDrinksMc) || 0,
@@ -247,7 +282,7 @@ export default function ShowPage() {
       .upsert(
         {
           show_id: showId!,
-          ...rowsToFlat(cdRows, CD_ALL, CD_DB_KEY, { c_tin: Number(miscDrinksCd) || 0 }),
+          ...rowsToFlat(cdRows, CD_ALL, CD_DB_KEY),
           upi_amount: Number(cdUpi) || 0,
           cash_amount: Number(cdCash) || 0,
           misc_drinks_cd: Number(miscDrinksCd) || 0,

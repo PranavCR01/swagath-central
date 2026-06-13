@@ -106,12 +106,21 @@ async function run() {
       console.log('Created day row:', dayId)
     }
 
-    // ── 4. Insert Show 1 (Baahubali, show_number 1) ─────────────────
+    // ── 4. Insert Show 1 (Baahubali, next available show_number) ────
+    const { data: existingShows } = await supabase
+      .from('theatre_shows')
+      .select('show_number')
+      .eq('day_id', dayId)
+      .order('show_number', { ascending: false })
+      .limit(1)
+
+    const nextShowNum = existingShows?.length ? existingShows[0].show_number + 1 : 1
+
     const { data: show1, error: show1Err } = await supabase
       .from('theatre_shows')
       .insert({
         day_id:      dayId,
-        show_number: 1,
+        show_number: nextShowNum,
         start_time:  '10:00',
         movie_name:  '[TEST] Baahubali',
         language:    'Kannada',
@@ -120,14 +129,14 @@ async function run() {
       .select('id')
       .single()
     if (show1Err || !show1) {
-      console.error('Cannot insert Show 1:', show1Err?.message)
+      console.error(`Cannot insert Show ${nextShowNum}:`, show1Err?.message)
       process.exit(1)
     }
     show1Id = show1.id as string
-    console.log('Show 1 created:', show1Id)
+    console.log(`Show ${nextShowNum} created:`, show1Id)
 
-    // ── 5. Save Show 1 main_counter + cool_drinks with closing balances ──
-    // tins_mc: ob=10, rec=0, cb=4 -> sale=6 (no misc adjustment on Show 1)
+    // ── 5. Save Show main_counter + cool_drinks with closing balances ──
+    // tins_mc: ob=10, rec=0, cb=4 -> sale=6 (no misc adjustment on this show)
     const MC_PREFIXES = [
       'veg_puff', 'egg_puff', 'h_cake', 'jam_bun', 'ckn_puff', 'samosa',
       'tin', 'frooty', 'chips', 'frymes', 'water', 'milkshake', 'kettle_chips', 'tins_mc',
@@ -153,7 +162,7 @@ async function run() {
       )
     if (mc1Err) { console.error('Show 1 main_counter save failed:', mc1Err.message); process.exit(1) }
 
-    // c_tin (CD Tins): ob=20, rec=0, cb=12 -> sale=8 (no misc adjustment on Show 1)
+    // c_tin (CD Tins): ob=20, rec=0, cb=12 -> sale=8 (no misc adjustment on this show)
     const CD_PREFIXES = [
       'water', 'tin', 'frooty_trop', 'milkshake', 'french_fries', 'veg_bites',
       'onion_samosa', 'ckn_popcorn', 'ckn_samosa', 'ckn_nuggets',
@@ -178,15 +187,15 @@ async function run() {
         { show_id: show1Id, ...cdFlat, upi_amount: 0, cash_amount: 0, misc_drinks_cd: 0 },
         { onConflict: 'show_id' },
       )
-    if (cd1Err) { console.error('Show 1 cool_drinks save failed:', cd1Err.message); process.exit(1) }
-    console.log('Show 1 main_counter + cool_drinks saved\n')
+    if (cd1Err) { console.error(`Show ${nextShowNum} cool_drinks save failed:`, cd1Err.message); process.exit(1) }
+    console.log(`Show ${nextShowNum} main_counter + cool_drinks saved\n`)
 
-    // ── 6. Insert Show 2 (Baahubali, show_number 2) ─────────────────
+    // ── 6. Insert Show nextShowNum + 1 (Baahubali) ──────────────────
     const { data: show2, error: show2Err } = await supabase
       .from('theatre_shows')
       .insert({
         day_id:      dayId,
-        show_number: 2,
+        show_number: nextShowNum + 1,
         start_time:  '13:00',
         movie_name:  '[TEST] Baahubali',
         language:    'Kannada',
@@ -195,15 +204,15 @@ async function run() {
       .select('id')
       .single()
     if (show2Err || !show2) {
-      console.error('Cannot insert Show 2:', show2Err?.message)
+      console.error(`Cannot insert Show ${nextShowNum + 1}:`, show2Err?.message)
       process.exit(1)
     }
     show2Id = show2.id as string
-    console.log('Show 2 created:', show2Id, '\n')
+    console.log(`Show ${nextShowNum + 1} created:`, show2Id, '\n')
 
-    // ── 7. Verify carry-forward: Show 2 OB should equal Show 1 CB ──
+    // ── 7. Verify carry-forward: Show ${nextShowNum + 1} OB should equal Show ${nextShowNum} CB ──
     // (mirrors applyCarryForward() in slipData.ts: ob = prev.cb, rec/cb/wst = '')
-    console.log('── Test: Carry-forward OB = previous show CB')
+    console.log(`── Test: Carry-forward OB = Show ${nextShowNum} CB (for Show ${nextShowNum + 1})`)
     {
       const { data: prevMc } = await supabase
         .from('theatre_main_counter')
@@ -222,12 +231,12 @@ async function run() {
         `got ${prevCd?.tin_cb}`)
     }
 
-    // ── 8. Simulate Show 2 save with Misc Drinks delta-based OB sync ──
-    // Show 2 carry-forward OB for tins_mc = 4 (Show 1's cb), misc_drinks_mc = 2
+    // ── 8. Simulate Show ${nextShowNum + 1} save with Misc Drinks delta-based OB sync ──
+    // Carry-forward OB for tins_mc = 4 (previous show's cb), misc_drinks_mc = 2
     // -> adjusted ob stored = 4 - 2 = 2; rec=0, cb=1 -> sale = max(0, 2+0-1) = 1
-    console.log('\n── Test: Misc Drinks delta-based Tins OB sync on save')
+    console.log(`\n── Test: Misc Drinks delta-based Tins OB sync on save (Show ${nextShowNum + 1})`)
     {
-      const carryOb = 4 // = Show 1's tins_mc_cb
+      const carryOb = 4 // = previous show's tins_mc_cb
       const miscMc = 2
       const adjustedOb = carryOb - miscMc // 2
       const rec = 0
