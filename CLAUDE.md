@@ -35,7 +35,7 @@ catering predictions and operational insights (Slice 5, future).
 | theatre_main_counter | 13 items × {ob, rec, cb, sale} per show |
 | theatre_popcorn | 3 cone sizes + BMS combo per show |
 | theatre_cool_drinks | 4 drinks + 7 live counter items per show |
-| theatre_parking | Scooter/Auto/Car count + reported amount per show |
+| theatre_parking | Scooter/Auto/Car count + UPI/Cash payment split per show |
 | theatre_expenses | Daily expenses per theatre |
 | theatre_staff_wages | Per-staff wage rows per day |
 
@@ -57,10 +57,11 @@ catering predictions and operational insights (Slice 5, future).
 2. **AMOUNT:** `sale × price` — never stored, always computed at display time
 3. **OB carry-forward:** current show OB = previous show's `ob + rec - cb - sale` (closing stock)
 4. **Parking expected:** `(scooter×20) + (auto×40) + (car×80)`
-5. **Parking gap:** `expected - reported` → red if > 0, green if 0
-6. **Show total:** MC total + Popcorn total + CD total + Parking reported
+5. **Parking gap:** `expected - reported (upi_amount + cash_amount)` → red if > 0, green if 0
+6. **Show total:** MC total + Popcorn total + CD total + Parking expected
 7. **B.Cash:** Total Sales − Total Expenses
 8. **Expenses vs Staff Wages:** `theatre_expenses.wages` = total wages line. `theatre_staff_wages` = per-person breakdown. Same figure shown two ways — do NOT double-count in B.Cash calculation.
+9. **Show Summary (Day Close):** MC/Pop/CDs totals = `sumBySale` (sale × price per item, item-level), not payment totals. Park column = `parkingExpected`. Profit column = `(MC+Pop+CDs+parkingExpected) - sumByCost` (sale+wst × cost per item).
 
 ---
 
@@ -148,3 +149,4 @@ src/
 - 2026-06-10 — Slice 5 — Insights dashboard, custom SVG charts, catering suggestions, seed/cleanup data scripts
 - 2026-06-10 — Slice 6 — AI daily summary via Groq, Vercel serverless function
 - 2026-06-11 — Slice 7 — security audit: source maps off, idle timeout, error message sanitization, API rate limiting + prompt-injection guards + CORS, gitignore hardening
+- 2026-06-13 — Parking UPI/Cash split (removed reported_amount), live counter payment section in Cool Drinks, Misc Drinks (MC) syncs to Tins OB (removed redundant Tins (MC) row), Day Close Show Summary now uses sales-based totals + sumByCost-derived Profit column

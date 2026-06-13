@@ -113,7 +113,7 @@ export default function DayClosePage() {
           showId: s.id, showNumber: s.show_number,
           startTime: s.start_time, movieName: s.movie_name,
           mcTotal, popcornTotal, cdTotal, parkingReported,
-          showTotal: computeShowTotal(mcTotal, popcornTotal, cdTotal, parkingReported),
+          showTotal: computeShowTotal(mcTotal, popcornTotal, cdTotal, expected),
           showProfit,
           isComplete: !!(mcMap[s.id] && pcMap[s.id] && cdMap[s.id]),
           scooterCount: scooter, autoCount: auto, carCount: car,
