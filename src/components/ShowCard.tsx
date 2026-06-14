@@ -1,3 +1,5 @@
+import { fmtTime } from '@/components/dayclose/types'
+
 const STATUS_META = {
   complete: { label: 'Complete',    dot: '✓', bg: 'rgba(34,197,94,0.16)',   fg: '#22c55e' },
   pending:  { label: 'Not Started', dot: '○', bg: 'rgba(255,255,255,0.05)', fg: 'rgba(255,255,255,0.38)' },
@@ -23,7 +25,7 @@ export default function ShowCard({
   showNumber, startTime, movieName, language, isFanShow,
   ticketCount, occupancyPct, isComplete, onClick,
 }: ShowCardProps) {
-  const displayTime = startTime.slice(0, 5)
+  const displayTime = fmtTime(startTime)
   const statusKey = isComplete ? 'complete' : 'pending'
   const sm = STATUS_META[statusKey]
 

@@ -64,6 +64,12 @@ export default function PopcornParkingSlip({
 
       <TotalCard label="Popcorn total" amount={pcTotal} />
 
+      <SectionDivider label="Popcorn Payment" />
+      <PaymentSection
+        upi={pcUpi} cash={pcCash} total={pcSlipTotal} slipTotal={pcTotal}
+        onUpi={onPcUpi} onCash={onPcCash}
+      />
+
       <SectionDivider label="Parking" />
 
       <ParkingRow label="Scooter" rate={PRICES.scooter} count={pkScooter} onChange={setPkScooter} />
@@ -113,11 +119,6 @@ export default function PopcornParkingSlip({
         </div>
       )}
 
-      <SectionDivider label="Popcorn Payment" />
-      <PaymentSection
-        upi={pcUpi} cash={pcCash} total={pcSlipTotal} slipTotal={pcTotal}
-        onUpi={onPcUpi} onCash={onPcCash}
-      />
       <div style={{ height: 16 }} />
     </>
   )

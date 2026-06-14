@@ -15,6 +15,16 @@ const LANGUAGES = ['Kannada', 'Hindi', 'Tamil', 'Telugu', 'English', 'Other']
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+function to12Hour(time24: string): { hour12: number; minute: number; ampm: 'AM' | 'PM' } {
+  const [h, m] = time24.split(':').map(Number)
+  return { hour12: h % 12 || 12, minute: m, ampm: h < 12 ? 'AM' : 'PM' }
+}
+
+function to24Hour(hour12: number, minute: number, ampm: 'AM' | 'PM'): string {
+  const h24 = ampm === 'AM' ? (hour12 === 12 ? 0 : hour12) : (hour12 === 12 ? 12 : hour12 + 12)
+  return `${String(h24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
 function formatShowDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
   const dt = new Date(y, m - 1, d)
@@ -52,7 +62,7 @@ export default function DayPage() {
   // Form fields
   const [showDate, setShowDate] = useState(getTodayIST())
   const [dateFocus, setDateFocus] = useState(false)
-  const [timeFocus, setTimeFocus] = useState(false)
+  const [ampmFocus, setAmpmFocus] = useState(false)
   const [startTime, setStartTime] = useState('10:00')
   const [movieName, setMovieName] = useState('')
   const [language, setLanguage] = useState('Kannada')
@@ -513,28 +523,57 @@ export default function DayPage() {
               {/* Start Time */}
               <div>
                 <ModalLabel>Start time *</ModalLabel>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 10, height: 52, padding: '0 14px',
-                  background: timeFocus ? 'var(--input-bg-focus)' : 'var(--input-bg)',
-                  border: `1.5px solid ${timeFocus ? 'var(--accent)' : 'var(--input-border)'}`,
-                  borderRadius: 'var(--r-input)',
-                  boxShadow: timeFocus ? '0 0 0 4px var(--accent-ring)' : 'none',
-                  transition: 'border-color .18s, box-shadow .18s',
-                }}>
-                  <Clock size={19} color={timeFocus ? 'var(--accent)' : 'var(--muted)'} strokeWidth={1.8} />
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={e => setStartTime(e.target.value)}
-                    onFocus={() => setTimeFocus(true)}
-                    onBlur={() => setTimeFocus(false)}
-                    style={{
-                      flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                      color: 'var(--text)', fontSize: 16, fontFamily: 'var(--mono)',
-                      colorScheme: 'dark',
-                    }}
-                  />
-                </div>
+                {(() => {
+                  const { hour12, minute, ampm } = to12Hour(startTime)
+                  const selectStyle: React.CSSProperties = {
+                    background: 'var(--surface)', border: 'none', outline: 'none',
+                    color: 'var(--text)', fontSize: 16, fontFamily: 'var(--mono)',
+                    colorScheme: 'dark', cursor: 'pointer', borderRadius: 4,
+                  }
+                  return (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6, height: 52, padding: '0 14px',
+                      background: 'var(--input-bg)',
+                      border: '1.5px solid var(--input-border)',
+                      borderRadius: 'var(--r-input)',
+                    }}>
+                      <Clock size={19} color="var(--muted)" strokeWidth={1.8} />
+                      <select
+                        value={hour12}
+                        onChange={e => setStartTime(to24Hour(Number(e.target.value), minute, ampm))}
+                        style={selectStyle}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+                          <option key={h} value={h} style={{ background: 'var(--surface)', color: 'var(--text)' }}>{h}</option>
+                        ))}
+                      </select>
+                      <span style={{ color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 16 }}>:</span>
+                      <select
+                        value={minute}
+                        onChange={e => setStartTime(to24Hour(hour12, Number(e.target.value), ampm))}
+                        style={selectStyle}
+                      >
+                        {Array.from({ length: 60 }, (_, i) => i).map(m => (
+                          <option key={m} value={m} style={{ background: 'var(--surface)', color: 'var(--text)' }}>{String(m).padStart(2, '0')}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setStartTime(to24Hour(hour12, minute, ampm === 'AM' ? 'PM' : 'AM'))}
+                        onFocus={() => setAmpmFocus(true)}
+                        onBlur={() => setAmpmFocus(false)}
+                        style={{
+                          marginLeft: 'auto', background: 'transparent', border: 'none', outline: 'none',
+                          cursor: 'pointer', borderRadius: 6, padding: '4px 10px',
+                          fontSize: 14, fontWeight: 600, fontFamily: 'var(--mono)',
+                          color: ampmFocus ? 'var(--accent)' : 'var(--text)',
+                        }}
+                      >
+                        {ampm}
+                      </button>
+                    </div>
+                  )
+                })()}
               </div>
 
               {/* Movie Name */}
