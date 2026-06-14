@@ -146,7 +146,7 @@ export async function generateDayReportPdf({
     checkPage()
     doc.text(
       `Show ${s.showNumber}  Scooter:${s.scooterCount}  Auto:${s.autoCount}  Car:${s.carCount}  ` +
-      `Expected:Rs.${inrFmt.format(s.parkingExpected)}  Reported:Rs.${inrFmt.format(s.parkingReported)}  Gap:Rs.${inrFmt.format(s.parkingGap)}`,
+      `Total:Rs.${inrFmt.format(s.parkingExpected)}`,
       M, y, { maxWidth: W - M * 2 }
     )
     y += 6
