@@ -350,7 +350,7 @@ export default function DayClosePage() {
         <ActionButtons
           readOnly={readOnly} saving={saving} isSaved={isSaved}
           onSave={handleSave} onDownload={downloadDayReport}
-          onGenerateSummary={() => navigate(`/summary/${theatreId}/${date}`)}
+          onGenerateSummary={() => navigate(`/summary/${theatreId}/${date}`, { state: { readOnly } })}
         />
       </div>
 

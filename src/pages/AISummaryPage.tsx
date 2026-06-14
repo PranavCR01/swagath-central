@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Sparkles, AlertTriangle } from 'lucide-react'
 import { buildDaySummary, type DaySummaryData } from '@/lib/aiSummary'
 import { AiBadge, fmtDateLabel } from '@/components/ai-summary/shared'
@@ -15,6 +15,8 @@ type Phase = 'loading' | 'after' | 'error'
 export default function AISummaryPage() {
   const { theatreId, date } = useParams<{ theatreId: string; date: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const fromReadOnly = (location.state as { readOnly?: boolean } | null)?.readOnly === true
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [data, setData] = useState<DaySummaryData | null>(null)
@@ -70,7 +72,7 @@ export default function AISummaryPage() {
         padding: '0 18px', borderBottom: '1px solid var(--card-border)', background: 'var(--bg)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <button onClick={() => navigate(`/theatre/${theatreId}/day/${date}/close`)} style={{
+          <button onClick={() => navigate(`/theatre/${theatreId}/day/${date}/close${fromReadOnly ? '?readOnly=true' : ''}`)} style={{
             width: 38, height: 38, borderRadius: 11, background: 'var(--surface)', border: '1px solid var(--card-border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0,
           }}>
