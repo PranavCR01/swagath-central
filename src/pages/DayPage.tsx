@@ -5,7 +5,7 @@ import { useDay } from '@/hooks/useDay'
 import { useShows } from '@/hooks/useShows'
 import ShowCard from '@/components/ShowCard'
 import type { Show } from '@/lib/types'
-import { Pencil, Calendar, Clock, User } from 'lucide-react'
+import { Calendar, Clock, User } from 'lucide-react'
 import { getTodayIST, getYesterdayIST } from '@/lib/utils'
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
@@ -325,35 +325,11 @@ export default function DayPage() {
                 occupancyPct={s.occupancy_pct ?? undefined}
                 isComplete={s.is_complete}
                 onClick={() => navigate(`/theatre/${theatreId}/day/${date}/show/${s.id}`)}
+                showDate={s.show_date ?? undefined}
+                todayIST={todayIST}
+                yesterdayIST={yesterdayIST}
+                onEdit={e => { e.stopPropagation(); openEditForm(s) }}
               />
-              {/* Back-dated badge */}
-              {s.show_date && s.show_date !== todayIST && (
-                <div style={{
-                  position: 'absolute', bottom: 10, left: 12,
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  padding: '3px 8px', borderRadius: 999,
-                  fontSize: 10, fontWeight: 600,
-                  background: 'var(--purple-chip)', color: 'var(--purple-text)',
-                  border: '1px solid var(--purple-border)',
-                  pointerEvents: 'none',
-                }}>
-                  <Calendar size={10} color="var(--purple-text)" />
-                  {s.show_date === yesterdayIST ? 'Yesterday' : 'Back-dated'}
-                </div>
-              )}
-              {/* Edit button */}
-              <button
-                onClick={e => { e.stopPropagation(); openEditForm(s) }}
-                style={{
-                  position: 'absolute', bottom: 10, right: 10,
-                  width: 32, height: 32, borderRadius: 8,
-                  background: 'var(--surface-2)', border: '1px solid var(--card-border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', padding: 0,
-                }}
-              >
-                <Pencil size={14} color="var(--muted)" />
-              </button>
             </div>
           ))
         )}

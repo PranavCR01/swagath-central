@@ -1,3 +1,4 @@
+import { Calendar, Pencil } from 'lucide-react'
 import { fmtTime } from '@/components/dayclose/types'
 
 const STATUS_META = {
@@ -19,15 +20,21 @@ interface ShowCardProps {
   occupancyPct?: number
   isComplete: boolean
   onClick: () => void
+  showDate?: string
+  todayIST?: string
+  yesterdayIST?: string
+  onEdit?: (e: React.MouseEvent) => void
 }
 
 export default function ShowCard({
   showNumber, startTime, movieName, language, isFanShow,
   ticketCount, occupancyPct, isComplete, onClick,
+  showDate, todayIST, yesterdayIST, onEdit,
 }: ShowCardProps) {
   const displayTime = fmtTime(startTime)
   const statusKey = isComplete ? 'complete' : 'pending'
   const sm = STATUS_META[statusKey]
+  const isBackDated = !!showDate && showDate !== todayIST
 
   return (
     <div
@@ -106,6 +113,40 @@ export default function ShowCard({
           </span>
         </div>
       </div>
+
+      {(isBackDated || onEdit) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+          <div>
+            {isBackDated && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '3px 8px', borderRadius: 999,
+                fontSize: 10, fontWeight: 600,
+                background: 'var(--purple-chip)', color: 'var(--purple-text)',
+                border: '1px solid var(--purple-border)',
+              }}>
+                <Calendar size={10} color="var(--purple-text)" />
+                {showDate === yesterdayIST ? 'Yesterday' : 'Back-dated'}
+              </div>
+            )}
+          </div>
+          <div>
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  background: 'var(--surface-2)', border: '1px solid var(--card-border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', padding: 0,
+                }}
+              >
+                <Pencil size={14} color="var(--muted)" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
