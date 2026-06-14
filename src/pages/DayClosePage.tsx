@@ -6,7 +6,7 @@ import {
   calcParkingExpected, calcParkingGap,
 } from '@/lib/calculations'
 import { loadSlipDataForShows } from '@/lib/loadSlipData'
-import { sumBySale, sumByCost, MC_PRICE, PC_PRICE, CD_PRICE, MC_COST, PC_COST, CD_COST } from '@/lib/insightsQueries'
+import { sumBySale, sumByCost, getWastageItems, MC_PRICE, PC_PRICE, CD_PRICE, MC_COST, PC_COST, CD_COST, MC_NAME, PC_NAME, CD_NAME } from '@/lib/insightsQueries'
 import { generateDayReportPdf } from '@/lib/pdfReport'
 import { toNum } from '@/lib/utils'
 import {
@@ -16,6 +16,7 @@ import {
 import DayCloseHeader from '@/components/dayclose/DayCloseHeader'
 import ShowSummaryTable from '@/components/dayclose/ShowSummaryTable'
 import ParkingSummaryTable from '@/components/dayclose/ParkingSummaryTable'
+import WastageTable from '@/components/dayclose/WastageTable'
 import UpiBreakdownForm from '@/components/dayclose/UpiBreakdownForm'
 import CashBreakdownForm from '@/components/dayclose/CashBreakdownForm'
 import ExpensesForm from '@/components/dayclose/ExpensesForm'
@@ -34,6 +35,7 @@ export default function DayClosePage() {
   const [theatreName, setTheatreName] = useState('')
   const [dayId, setDayId] = useState<string | null>(null)
   const [showSummaries, setShowSummaries] = useState<ShowSummary[]>([])
+  const [wastageItems, setWastageItems] = useState<{ section: string; name: string; qty: number; cost: number }[]>([])
 
   const [upi, setUpi] = useState<UpiState>(emptyUpi)
   const [cash, setCash] = useState<CashState>(emptyCash)
@@ -135,6 +137,15 @@ export default function DayClosePage() {
         }
       })
       setShowSummaries(summaries)
+
+      const mcRowsForWastage = shows.map(sh => mcMap[sh.id] ?? null)
+      const pcRowsForWastage = shows.map(sh => pcMap[sh.id] ?? null)
+      const cdRowsForWastage = shows.map(sh => cdMap[sh.id] ?? null)
+      setWastageItems([
+        ...getWastageItems(mcRowsForWastage, MC_COST, MC_NAME, 'Main Counter'),
+        ...getWastageItems(pcRowsForWastage, PC_COST, PC_NAME, 'Popcorn'),
+        ...getWastageItems(cdRowsForWastage, CD_COST, CD_NAME, 'Cool Drinks'),
+      ])
 
       // Auto-populate UPI fields from slip data — summed across all shows
       const autoMcUpi = shows.reduce((s, sh) => s + (mcMap[sh.id]?.upi_amount || 0), 0)
@@ -283,6 +294,7 @@ export default function DayClosePage() {
 
       <div style={{ padding: '18px 18px 0' }}>
         <ShowSummaryTable showSummaries={showSummaries} totalSales={totalSales} theatreId={theatreId} date={date} />
+        <WastageTable wastageItems={wastageItems} />
         <ParkingSummaryTable showSummaries={showSummaries} />
         <UpiBreakdownForm upi={upi} totalUpi={totalUpi} readOnly={readOnly} onChange={setUpiField} />
         <CashBreakdownForm cash={cash} totalCash={totalCash} readOnly={readOnly} onChange={setCashField} />

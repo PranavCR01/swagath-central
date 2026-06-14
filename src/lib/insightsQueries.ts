@@ -23,7 +23,7 @@ export const MC_NAME: Record<string, string> = {
   veg_puff: 'Veg Puff', egg_puff: 'Egg Puff', h_cake: 'Honey Cake', jam_bun: 'Jam Bun',
   ckn_puff: 'C Puff', samosa: 'Samosa', tin: 'Tins', frooty: 'Frooty',
   chips: 'Chips', frymes: 'Frymes', water: 'Water', milkshake: 'Milkshake',
-  kettle_chips: 'Kettle Chips', tins_mc: 'Tins (MC)',
+  kettle_chips: 'Kettle Chips',
 }
 
 export const PC_PRICE: Record<string, number> = { cone_60: PRICES.cone_60, cone_130: PRICES.cone_130, cone_200: PRICES.cone_200 }
@@ -86,6 +86,26 @@ export function sumByCost(row: Record<string, unknown> | null, costMap: Record<s
     total += (sale + wst) * costMap[prefix]
   }
   return total
+}
+
+export function getWastageItems(
+  rows: (Record<string, unknown> | null)[],
+  costMap: Record<string, number>,
+  nameMap: Record<string, string>,
+  section: string
+): { section: string; name: string; qty: number; cost: number }[] {
+  const result: { section: string; name: string; qty: number; cost: number }[] = []
+  for (const prefix in costMap) {
+    const qty = rows.reduce((s, row) => s + (Number(row?.[`${prefix}_wst`]) || 0), 0)
+    if (qty <= 0) continue
+    result.push({
+      section,
+      name: nameMap[prefix] ?? prefix,
+      qty,
+      cost: qty * (costMap[prefix] ?? 0),
+    })
+  }
+  return result
 }
 
 async function resolveTheatreIds(theatreId: string | 'both'): Promise<{ id: string; name: string }[]> {
