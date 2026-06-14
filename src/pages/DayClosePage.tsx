@@ -10,13 +10,14 @@ import { sumBySale, sumByCost, MC_PRICE, PC_PRICE, CD_PRICE, MC_COST, PC_COST, C
 import { generateDayReportPdf } from '@/lib/pdfReport'
 import { toNum } from '@/lib/utils'
 import {
-  emptyExp, emptyUpi, inrFmt,
-  type ExpState, type ShowSummary, type StaffRow, type UpiState,
+  emptyCash, emptyExp, emptyUpi, inrFmt,
+  type CashState, type ExpState, type ShowSummary, type StaffRow, type UpiState,
 } from '@/components/dayclose/types'
 import DayCloseHeader from '@/components/dayclose/DayCloseHeader'
 import ShowSummaryTable from '@/components/dayclose/ShowSummaryTable'
 import ParkingSummaryTable from '@/components/dayclose/ParkingSummaryTable'
 import UpiBreakdownForm from '@/components/dayclose/UpiBreakdownForm'
+import CashBreakdownForm from '@/components/dayclose/CashBreakdownForm'
 import ExpensesForm from '@/components/dayclose/ExpensesForm'
 import StaffWagesForm from '@/components/dayclose/StaffWagesForm'
 import ActionButtons from '@/components/dayclose/ActionButtons'
@@ -35,6 +36,7 @@ export default function DayClosePage() {
   const [showSummaries, setShowSummaries] = useState<ShowSummary[]>([])
 
   const [upi, setUpi] = useState<UpiState>(emptyUpi)
+  const [cash, setCash] = useState<CashState>(emptyCash)
   const [exp, setExp] = useState<ExpState>(emptyExp)
   const [othersDesc, setOthersDesc] = useState('')
   const [staffRows, setStaffRows] = useState<StaffRow[]>([])
@@ -43,13 +45,15 @@ export default function DayClosePage() {
   const [isSaved, setIsSaved] = useState(false)
 
   const setUpiField = (key: keyof UpiState, val: string) => setUpi(u => ({ ...u, [key]: val }))
+  const setCashField = (key: keyof CashState, val: string) => setCash(c => ({ ...c, [key]: val }))
   const setExpField = (key: keyof ExpState, val: string) => setExp(e => ({ ...e, [key]: val }))
 
   // Live-computed totals — these update as the user types
   const totalSales = computeDayTotal(showSummaries.map(s => s.showTotal))
   const totalProfit = showSummaries.reduce((s, v) => s + v.showProfit, 0)
   const costOfGoods = totalSales - totalProfit
-  const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.bmsUpi)
+  const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.bmsUpi) + toNum(upi.parkingUpi)
+  const totalCash = [cash.popcornCash, cash.mcCash, cash.cdCash, cash.lcCash, cash.parkingCash].reduce((s, v) => s + toNum(v), 0)
   const expObj = {
     wages: toNum(exp.wages),
     staff_coffee: toNum(exp.staffCoffee),
@@ -92,7 +96,7 @@ export default function DayClosePage() {
 
       type McR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number }
       type PcR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number; bms_combo_amount: number }
-      type CdR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number }
+      type CdR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number; live_upi_amount: number; live_cash_amount: number }
       type PkR = Record<string, unknown> & { show_id: string; scooter_count: number; auto_count: number; car_count: number; upi_amount: number | null; cash_amount: number | null }
 
       const mcMap = Object.fromEntries((mcRows as McR[]).map(r => [r.show_id, r]))
@@ -137,6 +141,13 @@ export default function DayClosePage() {
       const autoPopcornUpi = shows.reduce((s, sh) => s + (pcMap[sh.id]?.upi_amount || 0), 0)
       const autoCdUpi = shows.reduce((s, sh) => s + (cdMap[sh.id]?.upi_amount || 0), 0)
       const autoBmsUpi = shows.reduce((s, sh) => s + (pcMap[sh.id]?.bms_combo_amount || 0), 0)
+      const autoMcCash = shows.reduce((s, sh) => s + (mcMap[sh.id]?.cash_amount || 0), 0)
+      const autoPopcornCash = shows.reduce((s, sh) => s + (pcMap[sh.id]?.cash_amount || 0), 0)
+      const autoCdCash = shows.reduce((s, sh) => s + (cdMap[sh.id]?.cash_amount || 0), 0)
+      const autoParkingUpi = shows.reduce((s, sh) => s + (pkMap[sh.id]?.upi_amount || 0), 0)
+      const autoParkingCash = shows.reduce((s, sh) => s + (pkMap[sh.id]?.cash_amount || 0), 0)
+      const autoLcUpi = shows.reduce((s, sh) => s + (cdMap[sh.id]?.live_upi_amount || 0), 0)
+      const autoLcCash = shows.reduce((s, sh) => s + (cdMap[sh.id]?.live_cash_amount || 0), 0)
 
       // Pre-fill existing expenses if day was previously closed
       const e = expRes.data as Record<string, unknown> | null
@@ -161,7 +172,15 @@ export default function DayClosePage() {
           popcornUpi:  sv('popcorn_upi',      autoPopcornUpi),
           cdUpi:       sv('cool_drink_upi',   autoCdUpi),
           bmsUpi:      sv('bms_upi',          autoBmsUpi),
-          lcUpi:       e.live_counter_upi ? String(e.live_counter_upi) : '',
+          lcUpi:       sv('live_counter_upi', autoLcUpi),
+          parkingUpi:  sv('parking_upi',      autoParkingUpi),
+        })
+        setCash({
+          mcCash:      sv('main_counter_cash', autoMcCash),
+          popcornCash: sv('popcorn_cash',      autoPopcornCash),
+          cdCash:      sv('cool_drink_cash',   autoCdCash),
+          lcCash:      sv('live_counter_cash', autoLcCash),
+          parkingCash: sv('parking_cash',      autoParkingCash),
         })
       } else {
         // First time on this day — pre-fill entirely from slip data
@@ -170,7 +189,15 @@ export default function DayClosePage() {
           popcornUpi: autoPopcornUpi > 0 ? String(autoPopcornUpi) : '',
           cdUpi:      autoCdUpi      > 0 ? String(autoCdUpi)      : '',
           bmsUpi:     autoBmsUpi     > 0 ? String(autoBmsUpi)     : '',
-          lcUpi:      '',
+          lcUpi:      autoLcUpi      > 0 ? String(autoLcUpi)      : '',
+          parkingUpi: autoParkingUpi > 0 ? String(autoParkingUpi) : '',
+        })
+        setCash({
+          mcCash:      autoMcCash      > 0 ? String(autoMcCash)      : '',
+          popcornCash: autoPopcornCash > 0 ? String(autoPopcornCash) : '',
+          cdCash:      autoCdCash      > 0 ? String(autoCdCash)      : '',
+          lcCash:      autoLcCash      > 0 ? String(autoLcCash)      : '',
+          parkingCash: autoParkingCash > 0 ? String(autoParkingCash) : '',
         })
       }
 
@@ -203,6 +230,12 @@ export default function DayClosePage() {
       cool_drink_upi: toNum(upi.cdUpi),
       live_counter_upi: toNum(upi.lcUpi),
       bms_upi: toNum(upi.bmsUpi),
+      parking_upi: toNum(upi.parkingUpi),
+      popcorn_cash: toNum(cash.popcornCash),
+      main_counter_cash: toNum(cash.mcCash),
+      cool_drink_cash: toNum(cash.cdCash),
+      live_counter_cash: toNum(cash.lcCash),
+      parking_cash: toNum(cash.parkingCash),
     }, { onConflict: 'day_id' })
 
     // Replace staff wages in full (delete + reinsert)
@@ -252,6 +285,7 @@ export default function DayClosePage() {
         <ShowSummaryTable showSummaries={showSummaries} totalSales={totalSales} theatreId={theatreId} date={date} />
         <ParkingSummaryTable showSummaries={showSummaries} />
         <UpiBreakdownForm upi={upi} totalUpi={totalUpi} readOnly={readOnly} onChange={setUpiField} />
+        <CashBreakdownForm cash={cash} totalCash={totalCash} readOnly={readOnly} onChange={setCashField} />
         <ExpensesForm exp={exp} othersDesc={othersDesc} readOnly={readOnly} onExpChange={setExpField} onOthersDescChange={setOthersDesc} />
         <StaffWagesForm staffRows={staffRows} setStaffRows={setStaffRows} readOnly={readOnly} staffWagesTotal={staffWagesTotal} />
 

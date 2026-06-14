@@ -26,14 +26,18 @@ export interface ShowSummary {
 export interface StaffRow { tempId: string; name: string; amount: string }
 
 export interface UpiState {
-  popcornUpi: string; mcUpi: string; cdUpi: string; lcUpi: string; bmsUpi: string
+  popcornUpi: string; mcUpi: string; cdUpi: string; lcUpi: string; bmsUpi: string; parkingUpi: string
+}
+export interface CashState {
+  popcornCash: string; mcCash: string; cdCash: string; lcCash: string; parkingCash: string
 }
 export interface ExpState {
   wages: string; staffCoffee: string; waterCans: string
   labFood: string; wastage: string; othersAmount: string
 }
 
-export const emptyUpi: UpiState = { popcornUpi: '', mcUpi: '', cdUpi: '', lcUpi: '', bmsUpi: '' }
+export const emptyUpi: UpiState = { popcornUpi: '', mcUpi: '', cdUpi: '', lcUpi: '', bmsUpi: '', parkingUpi: '' }
+export const emptyCash: CashState = { popcornCash: '', mcCash: '', cdCash: '', lcCash: '', parkingCash: '' }
 export const emptyExp: ExpState = { wages: '', staffCoffee: '', waterCans: '', labFood: '', wastage: '', othersAmount: '' }
 
 export const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
