@@ -36,16 +36,14 @@ catering predictions and operational insights (Slice 5, future).
 | theatre_popcorn | 3 cone sizes + BMS combo per show |
 | theatre_cool_drinks | 4 drinks + 7 live counter items per show |
 | theatre_parking | Scooter/Auto/Car count + UPI/Cash payment split per show |
-| theatre_expenses | Daily expenses per theatre |
+| theatre_expenses | Daily expenses + UPI/Cash breakdown (popcorn/MC/CD/live counter/parking) per theatre |
 | theatre_staff_wages | Per-staff wage rows per day |
 
 ---
 
 ## Item Prices (hardcoded in prices.ts — never store in DB)
 **Main Counter:** Veg Puff ₹40, Egg Puff ₹40, H.Cake ₹40, Jam Bun ₹30, Ckn Puff ₹60, BS ₹30, Samosa ₹40, Tin ₹60, Frooty ₹40, Chips ₹30, Frymes ₹30, Water ₹30, Milkshake ₹50, Lays ₹60
-
 **Popcorn:** Cone Small ₹60, Cone Medium ₹130, Cone Large ₹200, BMS Combo = lump amount only
-
 **Cool Drinks:** Water ₹30, Tins 1 ₹70, Tins 2 ₹60, Frooty/Tropicana ₹40, Milkshake ₹50, French Fries ₹70, Veg Bites ₹70, Onion Samosa ₹80, Ckn Popcorn ₹80, Ckn Samosa ₹120, Ckn Nuggets ₹100, Ice Cream 1 ₹40, Ice Cream 2 ₹60, Ice Cream 3 ₹60, Tea/Coffee ₹30
 
 **Parking:** Scooter ₹20, Auto ₹30, Car ₹50
@@ -62,6 +60,9 @@ catering predictions and operational insights (Slice 5, future).
 7. **B.Cash:** Total Sales − Total Expenses
 8. **Expenses vs Staff Wages:** `theatre_expenses.wages` = total wages line. `theatre_staff_wages` = per-person breakdown. Same figure shown two ways — do NOT double-count in B.Cash calculation.
 9. **Show Summary (Day Close):** MC/Pop/CDs totals = `sumBySale` (sale × price per item, item-level), not payment totals. Park column = `parkingExpected`. Profit column = `(MC+Pop+CDs+parkingExpected) - sumByCost` (sale+wst × cost per item).
+10. **Net Profit:** `Gross Profit - Total Expenses`, where `Gross Profit = totalProfit` (sum of showProfit) and `Cost of Goods = totalSales - totalProfit`.
+11. **Cash Breakdown:** mirrors UPI Breakdown (Popcorn/MC/CD/Live Counter/Parking) — no BMS Cash row (BMS is UPI-only). `theatre_expenses` stores both UPI and Cash splits per category.
+12. **Wastage:** `getWastageItems()` sums `${prefix}_wst` per item across all shows; cost = `qty × cost price` (COSTS map, not PRICES) — grouped by Main Counter/Popcorn/Cool Drinks on Day Close.
 
 ---
 
@@ -144,9 +145,5 @@ src/
 
 ## Session Log
 <!-- One line per session: date + what was done -->
-- 2026-06-04 — Slice 3 — three slips, OB carry-forward, parking gap
-- 2026-06-05 — Slice 4 (day close, PDF, expenses, history) + fixes (useDay retry, DayClose completion, UPI auto-populate, label typo)
-- 2026-06-10 — Slice 5 — Insights dashboard, custom SVG charts, catering suggestions, seed/cleanup data scripts
-- 2026-06-10 — Slice 6 — AI daily summary via Groq, Vercel serverless function
-- 2026-06-11 — Slice 7 — security audit: source maps off, idle timeout, error message sanitization, API rate limiting + prompt-injection guards + CORS, gitignore hardening
-- 2026-06-13 — Parking UPI/Cash split (removed reported_amount), live counter payment section in Cool Drinks, Misc Drinks (MC) syncs to Tins OB (removed redundant Tins (MC) row), Day Close Show Summary now uses sales-based totals + sumByCost-derived Profit column
+- 2026-06-04 to 2026-06-11 — Slices 3-7 (three slips, day close/PDF/history, insights dashboard, AI summary, security audit) — see Build Slices table
+- 2026-06-13 — Parking UPI/Cash split, live counter payment section, sales-based Show Summary totals + Profit column; showTotal fixed to use parkingExpected; Net Profit card (Gross Revenue/COGS/Gross Profit/Expenses); Cash Breakdown form + parking UPI/Cash + live counter cash columns in theatre_expenses; per-item Wastage table (getWastageItems, COSTS-based); removed unused tins_mc from MC_NAME
