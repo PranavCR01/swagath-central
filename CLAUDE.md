@@ -65,7 +65,6 @@ catering predictions and operational insights (Slice 5, future).
 12. **Wastage:** `getWastageItems()` sums `${prefix}_wst` per item across all shows; cost = `qty × cost price` (COSTS map, not PRICES) — grouped by Main Counter/Popcorn/Cool Drinks on Day Close.
 
 ---
-
 ## Show Structure
 - Up to 7 shows/day (5 normal, 6-7 on big/fan releases)
 - Numbered 1–7, flexible start times (±20 min), no fixed slot names
@@ -147,3 +146,4 @@ src/
 <!-- One line per session: date + what was done -->
 - 2026-06-04 to 2026-06-11 — Slices 3-7 (three slips, day close/PDF/history, insights dashboard, AI summary, security audit) — see Build Slices table
 - 2026-06-13 — Parking UPI/Cash split, live counter payment section, sales-based Show Summary totals + Profit column; showTotal fixed to use parkingExpected; Net Profit card (Gross Revenue/COGS/Gross Profit/Expenses); Cash Breakdown form + parking UPI/Cash + live counter cash columns in theatre_expenses; per-item Wastage table (getWastageItems, COSTS-based); removed unused tins_mc from MC_NAME
+- 2026-06-13 (PDF + UI) — PDF report: wastage section, UPI/Cash breakdown, BMS column, parkingExpected in show summary, simplified parking row (counts + total), Rs. instead of ₹ (jsPDF font glyph fix); Popcorn Payment moved above Parking divider; Add Show form: custom 12hr hour/minute/AM-PM picker replaces native `<input type="time">`; ShowCard back-dated badge + edit button moved into a proper flex row (no absolute overlay)

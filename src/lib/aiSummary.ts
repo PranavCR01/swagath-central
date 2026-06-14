@@ -3,7 +3,7 @@ import { calcParkingExpected, calcParkingGap, computeShowTotal, computeBCash } f
 import { loadSlipDataForShows } from './loadSlipData'
 import {
   MC_PRICE, MC_NAME, MC_COST, PC_PRICE, PC_NAME, PC_COST, CD_PRICE, CD_NAME, CD_COST,
-  sumBySale, dateRange, toDateStr, fetchParkingGapTrend,
+  sumBySale, dateRange, toDateStr, fetchParkingGapTrend, getWastageItems,
   fetchCateringSuggestions, type CateringSuggestions,
 } from './insightsQueries'
 
@@ -51,6 +51,8 @@ export interface DaySummaryData {
   vsYesterday: number | null
   grossProfit: number
   profitMargin: number
+  wastageItems: { name: string; qty: number; cost: number }[]
+  totalWastageCost: number
   itemIntel: ItemIntel
   catering: (CateringSuggestions & { tomorrowLabel: string }) | null
   parking: ParkingAlertData | null
@@ -232,6 +234,16 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
   const grossProfit = Math.round(itemRevenue - itemCost)
   const profitMargin = itemRevenue > 0 ? Math.round((grossProfit / itemRevenue) * 100) : 0
 
+  const mcRows = loaded.shows.map(s => s.mc)
+  const pcRows = loaded.shows.map(s => s.pc)
+  const cdRows = loaded.shows.map(s => s.cd)
+  const wastageItems = [
+    ...getWastageItems(mcRows, MC_COST, MC_NAME, 'Main Counter'),
+    ...getWastageItems(pcRows, PC_COST, PC_NAME, 'Popcorn'),
+    ...getWastageItems(cdRows, CD_COST, CD_NAME, 'Cool Drinks'),
+  ].sort((a, b) => b.cost - a.cost)
+  const totalWastageCost = wastageItems.reduce((s, w) => s + w.cost, 0)
+
   const sortedItems = [...todayItems.entries()].sort(([, a], [, b]) => b.revenue - a.revenue)
   const topItems = sortedItems.slice(0, 3).map(([, v]) => ({ name: v.name, revenue: Math.round(v.revenue) }))
 
@@ -314,6 +326,7 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
     parkingExpected, parkingReported, parkingGap,
     topItems, expenses, bCash, vsYesterday,
     grossProfit, profitMargin,
+    wastageItems, totalWastageCost,
     itemIntel, catering, parking,
   }
 }

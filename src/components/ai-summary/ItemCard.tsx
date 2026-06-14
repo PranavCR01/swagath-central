@@ -31,9 +31,12 @@ export default function ItemCard({ kind, item }: { kind: 'top' | 'under'; item: 
           {item.trend === 'flat' && ' Sales are steady vs last week.'}
         </div>
       )}
-      {!isTop && item.suggestion && (
-        <div style={{ fontSize: 12.5, color: 'var(--purple-text)', marginTop: 10, lineHeight: 1.45, paddingTop: 10, borderTop: '1px solid var(--card-border)' }}>
-          {item.suggestion}
+      {!isTop && (
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
+          {item.name} is your lowest-selling item today.
+          {item.trend === 'down' && ' Sales are trending down vs last week — consider trimming stock for slower shows.'}
+          {item.trend === 'up' && ' Sales are actually trending up vs last week despite low volume today.'}
+          {item.trend === 'flat' && ' Sales are steady but low — monitor if this continues.'}
         </div>
       )}
     </Card>
