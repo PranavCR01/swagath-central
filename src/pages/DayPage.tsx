@@ -133,6 +133,30 @@ export default function DayPage() {
     setEditingShow(null)
   }
 
+  async function handleDeleteShow(showId: string) {
+    const confirmed = window.confirm('Delete this show? This will also remove all slip data entered for it.')
+    if (!confirmed) return
+    const { error } = await supabase.from('theatre_shows').delete().eq('id', showId)
+    if (error) { console.error(error); return }
+
+    // Re-fetch remaining shows ordered by start_time and re-number them sequentially
+    const { data: remaining } = await supabase
+      .from('theatre_shows')
+      .select('id,start_time')
+      .eq('day_id', day!.id)
+      .order('start_time', { ascending: true })
+
+    if (remaining?.length) {
+      await Promise.all(
+        remaining.map((s, idx) =>
+          supabase.from('theatre_shows').update({ show_number: idx + 1 }).eq('id', s.id)
+        )
+      )
+    }
+
+    refetch()
+  }
+
   async function handleSubmitShow(e: React.FormEvent) {
     e.preventDefault()
     if (!startTime || !movieName.trim()) { setFormError('Start time and movie name are required'); return }
@@ -200,6 +224,21 @@ export default function DayPage() {
       })
       setSaving(false)
       if (error) { console.error(error); setFormError('Could not save show. Please try again.'); return }
+
+      // Re-number all shows for this day in start_time order
+      const { data: allShows } = await supabase
+        .from('theatre_shows')
+        .select('id,start_time')
+        .eq('day_id', targetDayId)
+        .order('start_time', { ascending: true })
+
+      if (allShows?.length) {
+        await Promise.all(
+          allShows.map((s, idx) =>
+            supabase.from('theatre_shows').update({ show_number: idx + 1 }).eq('id', s.id)
+          )
+        )
+      }
     }
 
     closeSheet()
@@ -329,6 +368,7 @@ export default function DayPage() {
                 todayIST={todayIST}
                 yesterdayIST={yesterdayIST}
                 onEdit={e => { e.stopPropagation(); openEditForm(s) }}
+                onDelete={e => { e.stopPropagation(); handleDeleteShow(s.id) }}
               />
             </div>
           ))

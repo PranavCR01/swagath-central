@@ -1,4 +1,4 @@
-import { Calendar, Pencil } from 'lucide-react'
+import { Calendar, Pencil, Trash2 } from 'lucide-react'
 import { fmtTime } from '@/components/dayclose/types'
 
 const STATUS_META = {
@@ -24,12 +24,13 @@ interface ShowCardProps {
   todayIST?: string
   yesterdayIST?: string
   onEdit?: (e: React.MouseEvent) => void
+  onDelete?: (e: React.MouseEvent) => void
 }
 
 export default function ShowCard({
   showNumber, startTime, movieName, language, isFanShow,
   ticketCount, occupancyPct, isComplete, onClick,
-  showDate, todayIST, yesterdayIST, onEdit,
+  showDate, todayIST, yesterdayIST, onEdit, onDelete,
 }: ShowCardProps) {
   const displayTime = fmtTime(startTime)
   const statusKey = isComplete ? 'complete' : 'pending'
@@ -114,7 +115,7 @@ export default function ShowCard({
         </div>
       </div>
 
-      {(isBackDated || onEdit) && (
+      {(isBackDated || onEdit || onDelete) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
           <div>
             {isBackDated && (
@@ -130,7 +131,20 @@ export default function ShowCard({
               </div>
             )}
           </div>
-          <div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  background: 'var(--surface-2)', border: '1px solid var(--card-border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', padding: 0,
+                }}
+              >
+                <Trash2 size={14} color="var(--red, #ef4444)" />
+              </button>
+            )}
             {onEdit && (
               <button
                 onClick={onEdit}

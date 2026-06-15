@@ -50,6 +50,12 @@ export default function CoolDrinksSlip({
         />
       ))}
 
+      <SectionDivider label="Drinks Payment" />
+      <PaymentSection
+        upi={upi} cash={cash} total={slipTotal} slipTotal={drinksTotal}
+        onUpi={onUpi} onCash={onCash}
+      />
+
       <SectionDivider label="Live Counter" />
 
       {CD_ALL.filter(i => i.section === 'live').map(item => (
@@ -77,12 +83,7 @@ export default function CoolDrinksSlip({
 
       <MiscDrinksRow label="Misc Drinks (CD)" price={PRICES.cd_tin} value={miscDrinksCd} onChange={onMiscDrinksCd} />
 
-      <TotalCard label="Cool Drinks Total" amount={total} />
-      <SectionDivider label="Drinks Payment" />
-      <PaymentSection
-        upi={upi} cash={cash} total={slipTotal} slipTotal={drinksTotal}
-        onUpi={onUpi} onCash={onCash}
-      />
+      <TotalCard label="Counter Total" amount={total} />
       <div style={{ height: 16 }} />
     </>
   )

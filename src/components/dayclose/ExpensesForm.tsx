@@ -2,13 +2,11 @@ import { NumberInput, SectionHeader } from './DayCloseShared'
 import type { ExpState } from './types'
 
 export default function ExpensesForm({
-  exp, othersDesc, readOnly, onExpChange, onOthersDescChange,
+  exp, readOnly, onExpChange,
 }: {
   exp: ExpState
-  othersDesc: string
   readOnly: boolean
   onExpChange: (key: keyof ExpState, val: string) => void
-  onOthersDescChange: (v: string) => void
 }) {
   return (
     <>
@@ -32,24 +30,6 @@ export default function ExpensesForm({
             </div>
           </div>
         ))}
-        {/* Others row */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
-          <span style={{ fontSize: 13, color: 'var(--text)', flexShrink: 0, width: 48 }}>Others</span>
-          <input
-            value={othersDesc}
-            onChange={e => onOthersDescChange(e.target.value)}
-            placeholder="Description"
-            disabled={readOnly}
-            style={{
-              flex: 1, height: 38, padding: '0 10px', boxSizing: 'border-box',
-              background: 'var(--input-bg)', border: '1.5px solid var(--input-border)',
-              borderRadius: 8, color: 'var(--text)', fontSize: 13, outline: 'none',
-              fontFamily: 'inherit', opacity: readOnly ? 0.6 : 1,
-            }}
-          />
-          <span style={{ fontSize: 13, color: 'var(--muted)', flexShrink: 0 }}>₹</span>
-          <NumberInput value={exp.othersAmount} onChange={v => onExpChange('othersAmount', v)} disabled={readOnly} width={72} />
-        </div>
       </div>
     </>
   )

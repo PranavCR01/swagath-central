@@ -20,11 +20,11 @@ export default function ShowSummaryTable({
         border: '1px solid var(--card-border)', marginBottom: 20, overflow: 'hidden',
       }}>
         <div style={{
-          display: 'grid', gridTemplateColumns: '24px 1fr 58px 56px 54px 58px 66px 66px',
+          display: 'grid', gridTemplateColumns: '24px 1fr 58px 56px 54px 54px 58px 66px 66px',
           gap: 4, padding: '9px 12px',
           background: 'var(--surface-2)', borderBottom: '1px solid var(--card-border)',
         }}>
-          {['#', 'Movie', 'MC', 'Pop', 'CDs', 'Park', 'Total', 'Profit'].map((h, i) => (
+          {['#', 'Movie', 'MC', 'Pop', 'CDs', 'Live', 'Park', 'Total', 'Profit'].map((h, i) => (
             <div key={h} style={{
               fontSize: 10, color: 'var(--muted)', fontWeight: 700,
               textAlign: i >= 2 ? 'right' : 'left', textTransform: 'uppercase', letterSpacing: '.04em',
@@ -39,7 +39,7 @@ export default function ShowSummaryTable({
         ) : showSummaries.map(s => (
           <div key={s.showId}>
             <div style={{
-              display: 'grid', gridTemplateColumns: '24px 1fr 58px 56px 54px 58px 66px 66px',
+              display: 'grid', gridTemplateColumns: '24px 1fr 58px 56px 54px 54px 58px 66px 66px',
               gap: 4, padding: '9px 12px',
               borderBottom: '1px solid var(--card-border)', alignItems: 'center',
             }}>
@@ -47,12 +47,12 @@ export default function ShowSummaryTable({
               <div style={{ fontSize: 12, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {s.movieName}
               </div>
-              {[s.mcTotal, s.popcornTotal, s.cdTotal, s.parkingExpected, s.showTotal, s.showProfit].map((v, i) => (
+              {[s.mcTotal, s.popcornTotal, s.cdDrinksTotal, s.cdLiveTotal, s.parkingExpected, s.showTotal, s.showProfit].map((v, i) => (
                 <div key={i} style={{
                   fontFamily: 'var(--mono)', fontSize: 11, textAlign: 'right',
-                  color: i === 4 || i === 5 ? 'var(--accent)' : 'var(--text)', fontWeight: i === 4 ? 700 : 400,
+                  color: i === 5 || i === 6 ? 'var(--accent)' : 'var(--text)', fontWeight: i === 5 ? 700 : 400,
                 }}>
-                  {i === 5
+                  {i === 6
                     ? inrFmt.format(v)
                     : v > 0 ? inrFmt.format(v) : <span style={{ color: 'var(--muted)' }}>—</span>}
                 </div>
@@ -83,17 +83,25 @@ export default function ShowSummaryTable({
 
         {/* Grand total */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '24px 1fr 58px 56px 54px 58px 66px 66px',
+          display: 'grid', gridTemplateColumns: '24px 1fr 58px 56px 54px 54px 58px 66px 66px',
           gap: 4, padding: '9px 12px', background: 'var(--surface-2)',
         }}>
           <div />
           <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>Grand Total</div>
-          {[null, null, null, null, totalSales, showSummaries.reduce((sum, r) => sum + r.showProfit, 0)].map((v, i) => (
+          {[
+            showSummaries.reduce((sum, r) => sum + r.mcTotal, 0),
+            showSummaries.reduce((sum, r) => sum + r.popcornTotal, 0),
+            showSummaries.reduce((sum, r) => sum + r.cdDrinksTotal, 0),
+            showSummaries.reduce((sum, r) => sum + r.cdLiveTotal, 0),
+            showSummaries.reduce((sum, r) => sum + r.parkingExpected, 0),
+            totalSales,
+            showSummaries.reduce((sum, r) => sum + r.showProfit, 0),
+          ].map((v, i) => (
             <div key={i} style={{
               fontFamily: 'var(--mono)', fontSize: 13, textAlign: 'right',
               color: 'var(--accent)', fontWeight: 700,
             }}>
-              {v !== null ? '₹' + inrFmt.format(v) : ''}
+              ₹{inrFmt.format(v)}
             </div>
           ))}
         </div>

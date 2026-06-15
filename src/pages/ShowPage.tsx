@@ -131,15 +131,17 @@ export default function ShowPage() {
         setPkCash(pkData.cash_amount ? String(pkData.cash_amount) : '')
       }
 
-      // OB carry-forward — only when no existing data and show_number > 1
+      // OB carry-forward — gated independently per slip on whether that slip already has data
       const showNum = showRes.data?.show_number
-      if (showNum && showNum > 1 && !mcData) {
-        const { data: prevShow } = await supabase
+      if (showNum && showNum > 1) {
+        const { data: dayShows } = await supabase
           .from('theatre_shows')
-          .select('id')
+          .select('id,start_time')
           .eq('day_id', showRes.data.day_id)
-          .eq('show_number', showNum - 1)
-          .maybeSingle()
+          .order('start_time', { ascending: true })
+
+        const currentIdx = dayShows?.findIndex(s => s.id === showId) ?? -1
+        const prevShow = currentIdx > 0 ? dayShows![currentIdx - 1] : null
 
         if (!cancelled.current && prevShow) {
           const [prevMcRes, prevPcRes, prevCdRes] = await Promise.all([
@@ -151,28 +153,28 @@ export default function ShowPage() {
           if (cancelled.current) return
 
           let didCarry = false
-          if (prevMcRes.data) {
+          if (!mcData && prevMcRes.data) {
             setMcRows(applyCarryForward(
               flatToRows(prevMcRes.data as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY),
               MAIN_ITEMS,
             ))
             didCarry = true
           }
-          if (prevPcRes.data) {
+          if (!pcData && prevPcRes.data) {
             setPcRows(applyCarryForward(
               flatToRows(prevPcRes.data as Record<string, unknown>, POPCORN_ITEMS, PC_DB_KEY),
               POPCORN_ITEMS,
             ))
             didCarry = true
           }
-          if (prevCdRes.data) {
+          if (!cdData && prevCdRes.data) {
             setCdRows(applyCarryForward(
               flatToRows(prevCdRes.data as Record<string, unknown>, CD_ALL, CD_DB_KEY),
               CD_ALL,
             ))
             didCarry = true
           }
-          if (didCarry) setObNote(`OB carried from Show ${showNum - 1}`)
+          if (didCarry) setObNote(`OB carried from previous show`)
         }
       }
 

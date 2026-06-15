@@ -2,7 +2,7 @@ import jsPDF from 'jspdf'
 import { MC_PRICE, MC_COST, MC_NAME, PC_PRICE, PC_COST, PC_NAME, CD_PRICE, CD_COST, CD_NAME, getWastageItems } from './insightsQueries'
 import { loadSlipDataForShows } from './loadSlipData'
 import { toNum } from './utils'
-import { fmtTime, inrFmt, type ExpState, type ShowSummary, type StaffRow } from '@/components/dayclose/types'
+import { fmtTime, inrFmt, type ExpState, type OthersRow, type ShowSummary, type StaffRow } from '@/components/dayclose/types'
 
 const ITEM_MAPS = [
   { price: MC_PRICE as Record<string, number>, cost: MC_COST as Record<string, number>, name: MC_NAME as Record<string, string> },
@@ -28,7 +28,7 @@ function itemRowsForShow(rows: (Record<string, unknown> | null)[]): ItemSaleRow[
 }
 
 export async function generateDayReportPdf({
-  theatreName, date, showSummaries, totalSales, totalExpenses, bCash, exp, othersDesc, staffRows,
+  theatreName, date, showSummaries, totalSales, totalExpenses, bCash, exp, othersRows, staffRows,
 }: {
   theatreName: string
   date: string
@@ -37,7 +37,7 @@ export async function generateDayReportPdf({
   totalExpenses: number
   bCash: number
   exp: ExpState
-  othersDesc: string
+  othersRows: OthersRow[]
   staffRows: StaffRow[]
 }) {
   const showIds = showSummaries.map(s => s.showId)
@@ -93,27 +93,28 @@ export async function generateDayReportPdf({
 
   // Show summary
   sectionHdr('SHOW SUMMARY')
-  const cols = [M, M + 10, M + 60, M + 82, M + 102, M + 122, M + 142, M + 162]
+  const cols = [M, M + 10, M + 56, M + 76, M + 94, M + 112, M + 130, M + 148, M + 168]
   doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(90, 90, 110)
-  ;['#', 'Movie', 'MC', 'Popcorn', 'CDs', 'BMS', 'Parking', 'Total'].forEach((h, i) => doc.text(h, cols[i], y))
+  ;['#', 'Movie', 'MC', 'Popcorn', 'CDs', 'Live', 'BMS', 'Parking', 'Total'].forEach((h, i) => doc.text(h, cols[i], y))
   y += 5; rule()
 
   doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 40)
   for (const s of showSummaries) {
     const bmsAmount = Number(pcMap.get(s.showId)?.bms_combo_amount) || 0
     doc.text(String(s.showNumber), cols[0], y)
-    doc.text(s.movieName.substring(0, 22), cols[1], y)
+    doc.text(s.movieName.substring(0, 20), cols[1], y)
     doc.text('Rs.' + inrFmt.format(s.mcTotal), cols[2], y)
     doc.text('Rs.' + inrFmt.format(s.popcornTotal), cols[3], y)
-    doc.text('Rs.' + inrFmt.format(s.cdTotal), cols[4], y)
-    doc.text('Rs.' + inrFmt.format(bmsAmount), cols[5], y)
-    doc.text('Rs.' + inrFmt.format(s.parkingExpected), cols[6], y)
-    doc.text('Rs.' + inrFmt.format(s.showTotal), cols[7], y)
+    doc.text('Rs.' + inrFmt.format(s.cdDrinksTotal), cols[4], y)
+    doc.text('Rs.' + inrFmt.format(s.cdLiveTotal), cols[5], y)
+    doc.text('Rs.' + inrFmt.format(bmsAmount), cols[6], y)
+    doc.text('Rs.' + inrFmt.format(s.parkingExpected), cols[7], y)
+    doc.text('Rs.' + inrFmt.format(s.showTotal), cols[8], y)
     y += 6
   }
   doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 120, 0)
-  doc.text('Total Sales', cols[6], y)
-  doc.text('Rs.' + inrFmt.format(totalSales), cols[7], y)
+  doc.text('Total Sales', cols[7], y)
+  doc.text('Rs.' + inrFmt.format(totalSales), cols[8], y)
   y += 10
 
   // Ticket breakdown
@@ -235,7 +236,7 @@ export async function generateDayReportPdf({
     `Water Cans Rs.${inrFmt.format(toNum(exp.waterCans))}`,
     `Lab Food Rs.${inrFmt.format(toNum(exp.labFood))}`,
     `Wastage Rs.${inrFmt.format(toNum(exp.wastage))}`,
-    ...(othersDesc ? [`Others (${othersDesc}) Rs.${inrFmt.format(toNum(exp.othersAmount))}`] : []),
+    ...othersRows.filter(r => r.description.trim() || Number(r.amount)).map(r => `Others (${r.description || '—'}) Rs.${inrFmt.format(Number(r.amount) || 0)}`),
   ]
   doc.text(expParts.join('  ·  '), M, y, { maxWidth: W - M * 2 })
   y += 10

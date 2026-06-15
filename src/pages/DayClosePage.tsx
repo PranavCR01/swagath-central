@@ -3,19 +3,19 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import {
   computeShowTotal, computeDayTotal, computeBCash,
-  calcParkingExpected, calcParkingGap,
+  calcParkingExpected,
 } from '@/lib/calculations'
 import { loadSlipDataForShows } from '@/lib/loadSlipData'
-import { sumBySale, sumByCost, getWastageItems, MC_PRICE, PC_PRICE, CD_PRICE, MC_COST, PC_COST, CD_COST, MC_NAME, PC_NAME, CD_NAME } from '@/lib/insightsQueries'
+import { sumBySale, sumByCost, getWastageItems, MC_PRICE, PC_PRICE, CD_DRINKS_PRICE, CD_LIVE_PRICE, MC_COST, PC_COST, CD_COST, MC_NAME, PC_NAME, CD_NAME } from '@/lib/insightsQueries'
 import { generateDayReportPdf } from '@/lib/pdfReport'
 import { toNum } from '@/lib/utils'
 import {
   emptyCash, emptyExp, emptyUpi, inrFmt,
-  type CashState, type ExpState, type ShowSummary, type StaffRow, type UpiState,
+  type CashState, type ExpState, type OthersRow, type ShowSummary, type StaffRow, type UpiState,
 } from '@/components/dayclose/types'
+import { NumberInput, SectionHeader } from '@/components/dayclose/DayCloseShared'
 import DayCloseHeader from '@/components/dayclose/DayCloseHeader'
 import ShowSummaryTable from '@/components/dayclose/ShowSummaryTable'
-import ParkingSummaryTable from '@/components/dayclose/ParkingSummaryTable'
 import WastageTable from '@/components/dayclose/WastageTable'
 import UpiBreakdownForm from '@/components/dayclose/UpiBreakdownForm'
 import CashBreakdownForm from '@/components/dayclose/CashBreakdownForm'
@@ -40,7 +40,7 @@ export default function DayClosePage() {
   const [upi, setUpi] = useState<UpiState>(emptyUpi)
   const [cash, setCash] = useState<CashState>(emptyCash)
   const [exp, setExp] = useState<ExpState>(emptyExp)
-  const [othersDesc, setOthersDesc] = useState('')
+  const [othersRows, setOthersRows] = useState<OthersRow[]>([{ tempId: crypto.randomUUID(), description: '', amount: '' }])
   const [staffRows, setStaffRows] = useState<StaffRow[]>([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
@@ -56,19 +56,26 @@ export default function DayClosePage() {
   const costOfGoods = totalSales - totalProfit
   const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.bmsUpi) + toNum(upi.parkingUpi)
   const totalCash = [cash.popcornCash, cash.mcCash, cash.cdCash, cash.lcCash, cash.parkingCash].reduce((s, v) => s + toNum(v), 0)
+  const othersTotal = othersRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const expObj = {
     wages: toNum(exp.wages),
     staff_coffee: toNum(exp.staffCoffee),
     water_cans: toNum(exp.waterCans),
     lab_food: toNum(exp.labFood),
     wastage: toNum(exp.wastage),
-    others_amount: toNum(exp.othersAmount),
+    others_amount: othersTotal,
   }
   const totalExpenses = Object.values(expObj).reduce((s, v) => s + v, 0)
   const netProfit = totalProfit - totalExpenses
   // B.Cash uses theatre_expenses.wages only — staff wage rows are breakdown only, not additive
   const bCash = computeBCash(totalSales, expObj)
   const staffWagesTotal = staffRows.reduce((s, r) => s + toNum(r.amount), 0)
+
+  function addOthersRow() { setOthersRows(rs => [...rs, { tempId: crypto.randomUUID(), description: '', amount: '' }]) }
+  function removeOthersRow(tempId: string) { setOthersRows(rs => rs.filter(r => r.tempId !== tempId)) }
+  function updateOthersRow(tempId: string, field: 'description' | 'amount', val: string) {
+    setOthersRows(rs => rs.map(r => r.tempId === tempId ? { ...r, [field]: val } : r))
+  }
 
   useEffect(() => {
     if (!theatreId || !date) return
@@ -90,10 +97,11 @@ export default function DayClosePage() {
       if (!shows?.length) { setLoading(false); return }
 
       const showIds = shows.map(s => s.id)
-      const [{ mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows }, expRes, swRes] = await Promise.all([
+      const [{ mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows }, expRes, swRes, othersRes] = await Promise.all([
         loadSlipDataForShows(showIds),
         supabase.from('theatre_expenses').select('*').eq('day_id', day.id).maybeSingle(),
         supabase.from('theatre_staff_wages').select('id,staff_name,amount').eq('day_id', day.id),
+        supabase.from('theatre_expense_others').select('*').eq('day_id', day.id),
       ])
 
       type McR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number }
@@ -110,25 +118,24 @@ export default function DayClosePage() {
         const mc = mcMap[s.id], pc = pcMap[s.id], cd = cdMap[s.id], pk = pkMap[s.id]
         const mcTotal = sumBySale(mc ?? null, MC_PRICE)
         const popcornTotal = sumBySale(pc ?? null, PC_PRICE) + (Number(pc?.bms_combo_amount) || 0)
-        const cdTotal = sumBySale(cd ?? null, CD_PRICE)
+        const cdDrinksTotal = sumBySale(cd ?? null, CD_DRINKS_PRICE)
+        const cdLiveTotal = sumBySale(cd ?? null, CD_LIVE_PRICE)
         const mcCost = sumByCost(mc ?? null, MC_COST)
         const pcCost = sumByCost(pc ?? null, PC_COST)
         const cdCost = sumByCost(cd ?? null, CD_COST)
         const parkingReported = (pk?.upi_amount ?? 0) + (pk?.cash_amount ?? 0)
         const scooter = pk?.scooter_count ?? 0, auto = pk?.auto_count ?? 0, car = pk?.car_count ?? 0
         const expected = calcParkingExpected(scooter, auto, car)
-        const showProfit = (mcTotal + popcornTotal + cdTotal + expected) - (mcCost + pcCost + cdCost)
+        const showProfit = (mcTotal + popcornTotal + cdDrinksTotal + cdLiveTotal + expected) - (mcCost + pcCost + cdCost)
         return {
           showId: s.id, showNumber: s.show_number,
           startTime: s.start_time, movieName: s.movie_name,
-          mcTotal, popcornTotal, cdTotal, parkingReported,
-          showTotal: computeShowTotal(mcTotal, popcornTotal, cdTotal, expected),
+          mcTotal, popcornTotal, cdDrinksTotal, cdLiveTotal, parkingReported,
+          showTotal: computeShowTotal(mcTotal, popcornTotal, cdDrinksTotal + cdLiveTotal, expected),
           showProfit,
           isComplete: !!(mcMap[s.id] && pcMap[s.id] && cdMap[s.id]),
           scooterCount: scooter, autoCount: auto, carCount: car,
           parkingExpected: expected,
-          parkingGap: calcParkingGap(expected, parkingReported),
-          parkingMissing: pk === undefined || (pk.upi_amount === null && pk.cash_amount === null),
           boxTickets: s.box_tickets ?? 0,
           goldTickets: s.gold_tickets ?? 0,
           silverTickets: s.silver_tickets ?? 0,
@@ -170,9 +177,13 @@ export default function DayClosePage() {
           waterCans: e.water_cans?.toString() ?? '',
           labFood: e.lab_food?.toString() ?? '',
           wastage: e.wastage?.toString() ?? '',
-          othersAmount: e.others_amount?.toString() ?? '',
         })
-        setOthersDesc((e.others_description as string) ?? '')
+        const othersResData = (othersRes.data ?? []) as { description: string; amount: number }[]
+        if (othersResData.length) {
+          setOthersRows(othersResData.map(r => ({ tempId: crypto.randomUUID(), description: r.description, amount: String(r.amount) })))
+        } else if (e.others_description || Number(e.others_amount)) {
+          setOthersRows([{ tempId: crypto.randomUUID(), description: (e.others_description as string) ?? '', amount: e.others_amount?.toString() ?? '' }])
+        }
         // Use saved value if non-zero; fall back to auto-computed from slip data
         const sv = (key: string, auto: number) => {
           const saved = Number(e[key]) || 0
@@ -234,8 +245,8 @@ export default function DayClosePage() {
       water_cans: toNum(exp.waterCans),
       lab_food: toNum(exp.labFood),
       wastage: toNum(exp.wastage),
-      others_description: othersDesc,
-      others_amount: toNum(exp.othersAmount),
+      others_description: '',
+      others_amount: 0,
       popcorn_upi: toNum(upi.popcornUpi),
       main_counter_upi: toNum(upi.mcUpi),
       cool_drink_upi: toNum(upi.cdUpi),
@@ -258,6 +269,15 @@ export default function DayClosePage() {
       )
     }
 
+    // Replace other expenses in full (delete + reinsert)
+    await supabase.from('theatre_expense_others').delete().eq('day_id', dayId)
+    const validOthers = othersRows.filter(r => r.description.trim() || Number(r.amount))
+    if (validOthers.length) {
+      await supabase.from('theatre_expense_others').insert(
+        validOthers.map(r => ({ day_id: dayId, description: r.description.trim(), amount: Number(r.amount) || 0 }))
+      )
+    }
+
     setSaving(false)
     setIsSaved(true)
     setToast('✓ Saved')
@@ -267,7 +287,7 @@ export default function DayClosePage() {
   async function downloadDayReport() {
     await generateDayReportPdf({
       theatreName, date: date!, showSummaries, totalSales, totalExpenses, bCash,
-      exp, othersDesc, staffRows,
+      exp, othersRows, staffRows,
     })
   }
 
@@ -295,11 +315,85 @@ export default function DayClosePage() {
       <div style={{ padding: '18px 18px 0' }}>
         <ShowSummaryTable showSummaries={showSummaries} totalSales={totalSales} theatreId={theatreId} date={date} />
         <WastageTable wastageItems={wastageItems} />
-        <ParkingSummaryTable showSummaries={showSummaries} />
         <UpiBreakdownForm upi={upi} totalUpi={totalUpi} readOnly={readOnly} onChange={setUpiField} />
         <CashBreakdownForm cash={cash} totalCash={totalCash} readOnly={readOnly} onChange={setCashField} />
-        <ExpensesForm exp={exp} othersDesc={othersDesc} readOnly={readOnly} onExpChange={setExpField} onOthersDescChange={setOthersDesc} />
+        <ExpensesForm exp={exp} readOnly={readOnly} onExpChange={setExpField} />
         <StaffWagesForm staffRows={staffRows} setStaffRows={setStaffRows} readOnly={readOnly} staffWagesTotal={staffWagesTotal} />
+
+        <SectionHeader label="Other Expenses" />
+        <div style={{
+          background: 'var(--surface)', borderRadius: 'var(--r-card)',
+          border: '1px solid var(--card-border)', marginBottom: 20, padding: '14px 14px 10px',
+        }}>
+          {othersRows.length === 0 && readOnly && (
+            <div style={{ color: 'var(--muted)', fontSize: 13, textAlign: 'center', padding: '6px 0 10px' }}>
+              No other expenses recorded
+            </div>
+          )}
+          {othersRows.map(row => (
+            <div key={row.tempId} style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center' }}>
+              <input
+                value={row.description}
+                onChange={e => updateOthersRow(row.tempId, 'description', e.target.value)}
+                placeholder="Description"
+                disabled={readOnly}
+                style={{
+                  flex: 1, height: 38, padding: '0 10px', boxSizing: 'border-box',
+                  background: 'var(--input-bg)', border: '1.5px solid var(--input-border)',
+                  borderRadius: 8, color: 'var(--text)', fontSize: 13, outline: 'none',
+                  fontFamily: 'inherit', opacity: readOnly ? 0.6 : 1,
+                }}
+              />
+              <NumberInput
+                value={row.amount}
+                onChange={v => updateOthersRow(row.tempId, 'amount', v)}
+                disabled={readOnly}
+                width={80}
+                placeholder="0"
+              />
+              {!readOnly && (
+                <button
+                  onClick={() => removeOthersRow(row.tempId)}
+                  style={{
+                    width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                    background: 'transparent', border: '1px solid rgba(239,68,68,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: 'var(--red)',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          ))}
+          {!readOnly && (
+            <button
+              onClick={addOthersRow}
+              style={{
+                width: '100%', height: 38, background: 'transparent',
+                border: '1.5px dashed var(--input-border)', borderRadius: 8,
+                color: 'var(--muted)', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              + Add Other
+            </button>
+          )}
+          {othersTotal > 0 && (
+            <div style={{
+              marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--card-border)',
+              display: 'flex', justifyContent: 'space-between',
+            }}>
+              <span style={{ fontSize: 12, color: 'var(--muted)' }}>Running Total</span>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--muted)' }}>
+                ₹{inrFmt.format(othersTotal)}
+              </span>
+            </div>
+          )}
+        </div>
 
         <div style={{
           background: 'var(--surface)', borderRadius: 'var(--r-card)',

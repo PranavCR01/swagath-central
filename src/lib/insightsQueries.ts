@@ -51,6 +51,31 @@ export const CD_NAME: Record<string, string> = {
   ice_cream3: 'Ice Cream 3', tea_coffee: 'Tea/Coffee', sandwich: 'Sandwich',
 }
 
+export const CD_DRINKS_PRICE: Record<string, number> = {
+  water: PRICES.cd_water, tin: PRICES.cd_tin,
+  frooty_trop: PRICES.frooty_trop, milkshake: PRICES.cd_milkshake,
+}
+export const CD_DRINKS_COST: Record<string, number> = {
+  water: COSTS.cd_water, tin: COSTS.cd_tin,
+  frooty_trop: COSTS.frooty_trop, milkshake: COSTS.cd_milkshake,
+}
+export const CD_LIVE_PRICE: Record<string, number> = {
+  french_fries: PRICES.french_fries, veg_bites: PRICES.veg_bites,
+  onion_samosa: PRICES.onion_samosa, ckn_popcorn: PRICES.ckn_popcorn,
+  ckn_samosa: PRICES.ckn_samosa, ckn_nuggets: PRICES.ckn_nuggets,
+  ice_cream1: PRICES.ice_cream1, ice_cream2: PRICES.ice_cream2,
+  ice_cream3: PRICES.ice_cream3, tea_coffee: PRICES.tea_coffee,
+  sandwich: PRICES.sandwich,
+}
+export const CD_LIVE_COST: Record<string, number> = {
+  french_fries: COSTS.french_fries, veg_bites: COSTS.veg_bites,
+  onion_samosa: COSTS.onion_samosa, ckn_popcorn: COSTS.ckn_popcorn,
+  ckn_samosa: COSTS.ckn_samosa, ckn_nuggets: COSTS.ckn_nuggets,
+  ice_cream1: COSTS.ice_cream1, ice_cream2: COSTS.ice_cream2,
+  ice_cream3: COSTS.ice_cream3, tea_coffee: COSTS.tea_coffee,
+  sandwich: COSTS.sandwich,
+}
+
 export function toDateStr(d: Date): string {
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
 }

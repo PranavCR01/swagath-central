@@ -5,7 +5,8 @@ export interface ShowSummary {
   movieName: string
   mcTotal: number
   popcornTotal: number
-  cdTotal: number
+  cdDrinksTotal: number
+  cdLiveTotal: number
   parkingReported: number
   showTotal: number
   showProfit: number
@@ -14,8 +15,6 @@ export interface ShowSummary {
   autoCount: number
   carCount: number
   parkingExpected: number
-  parkingGap: number
-  parkingMissing: boolean
   boxTickets: number
   goldTickets: number
   silverTickets: number
@@ -24,6 +23,7 @@ export interface ShowSummary {
 }
 
 export interface StaffRow { tempId: string; name: string; amount: string }
+export interface OthersRow { tempId: string; description: string; amount: string }
 
 export interface UpiState {
   popcornUpi: string; mcUpi: string; cdUpi: string; lcUpi: string; bmsUpi: string; parkingUpi: string
@@ -33,12 +33,12 @@ export interface CashState {
 }
 export interface ExpState {
   wages: string; staffCoffee: string; waterCans: string
-  labFood: string; wastage: string; othersAmount: string
+  labFood: string; wastage: string
 }
 
 export const emptyUpi: UpiState = { popcornUpi: '', mcUpi: '', cdUpi: '', lcUpi: '', bmsUpi: '', parkingUpi: '' }
 export const emptyCash: CashState = { popcornCash: '', mcCash: '', cdCash: '', lcCash: '', parkingCash: '' }
-export const emptyExp: ExpState = { wages: '', staffCoffee: '', waterCans: '', labFood: '', wastage: '', othersAmount: '' }
+export const emptyExp: ExpState = { wages: '', staffCoffee: '', waterCans: '', labFood: '', wastage: '' }
 
 export const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 
