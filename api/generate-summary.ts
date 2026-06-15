@@ -95,7 +95,7 @@ function buildPrompt(theatreName: string, date: string, d: DaySummaryData): stri
     : 'vs yesterday: not available'
 
   return `You are an operations advisor for a single-screen cinema in Bangalore, India.
-Write a concise daily operations summary for the owner in 3-4 short paragraphs.
+Write a concise daily operations summary for Chai in 3-4 short paragraphs.
 Be direct, specific, and use the actual numbers. Write like a smart colleague, not a chatbot.
 Currency is Indian Rupees (₹). Use Indian number formatting.
 

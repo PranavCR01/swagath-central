@@ -136,7 +136,7 @@ export default function HomePage() {
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>{displayDate}</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginTop: 2, letterSpacing: '-.02em' }}>
-            Good evening, Owner
+            Good evening, Chai
           </div>
         </div>
 
