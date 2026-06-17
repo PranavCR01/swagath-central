@@ -67,5 +67,6 @@ export interface Show {
   ticket_count: number | null
   occupancy_pct: number | null
   created_at: string
+  ob_mismatch_seen_value?: string | null
   is_complete: boolean
 }

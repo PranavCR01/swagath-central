@@ -42,6 +42,7 @@ export default function DayClosePage() {
   const [exp, setExp] = useState<ExpState>(emptyExp)
   const [othersRows, setOthersRows] = useState<OthersRow[]>([{ tempId: crypto.randomUUID(), description: '', amount: '' }])
   const [staffRows, setStaffRows] = useState<StaffRow[]>([])
+  const [bmsAmount, setBmsAmount] = useState('')
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
   const [isSaved, setIsSaved] = useState(false)
@@ -54,7 +55,7 @@ export default function DayClosePage() {
   const totalSales = computeDayTotal(showSummaries.map(s => s.showTotal))
   const totalProfit = showSummaries.reduce((s, v) => s + v.showProfit, 0)
   const costOfGoods = totalSales - totalProfit
-  const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.bmsUpi) + toNum(upi.parkingUpi)
+  const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.parkingUpi)
   const totalCash = [cash.popcornCash, cash.mcCash, cash.cdCash, cash.lcCash, cash.parkingCash].reduce((s, v) => s + toNum(v), 0)
   const othersTotal = othersRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const expObj = {
@@ -158,7 +159,7 @@ export default function DayClosePage() {
       const autoMcUpi = shows.reduce((s, sh) => s + (mcMap[sh.id]?.upi_amount || 0), 0)
       const autoPopcornUpi = shows.reduce((s, sh) => s + (pcMap[sh.id]?.upi_amount || 0), 0)
       const autoCdUpi = shows.reduce((s, sh) => s + (cdMap[sh.id]?.upi_amount || 0), 0)
-      const autoBmsUpi = shows.reduce((s, sh) => s + (pcMap[sh.id]?.bms_combo_amount || 0), 0)
+      const autoBmsAmount = shows.reduce((s, sh) => s + (pcMap[sh.id]?.bms_combo_amount || 0), 0)
       const autoMcCash = shows.reduce((s, sh) => s + (mcMap[sh.id]?.cash_amount || 0), 0)
       const autoPopcornCash = shows.reduce((s, sh) => s + (pcMap[sh.id]?.cash_amount || 0), 0)
       const autoCdCash = shows.reduce((s, sh) => s + (cdMap[sh.id]?.cash_amount || 0), 0)
@@ -184,19 +185,20 @@ export default function DayClosePage() {
         } else if (e.others_description || Number(e.others_amount)) {
           setOthersRows([{ tempId: crypto.randomUUID(), description: (e.others_description as string) ?? '', amount: e.others_amount?.toString() ?? '' }])
         }
-        // Use saved value if non-zero; fall back to auto-computed from slip data
+        // Prefer live slip-computed value; fall back to saved only when live is zero (e.g. slip not yet entered)
         const sv = (key: string, auto: number) => {
+          if (auto > 0) return String(auto)
           const saved = Number(e[key]) || 0
-          return saved > 0 ? String(saved) : auto > 0 ? String(auto) : ''
+          return saved > 0 ? String(saved) : ''
         }
         setUpi({
           mcUpi:       sv('main_counter_upi', autoMcUpi),
           popcornUpi:  sv('popcorn_upi',      autoPopcornUpi),
           cdUpi:       sv('cool_drink_upi',   autoCdUpi),
-          bmsUpi:      sv('bms_upi',          autoBmsUpi),
           lcUpi:       sv('live_counter_upi', autoLcUpi),
           parkingUpi:  sv('parking_upi',      autoParkingUpi),
         })
+        setBmsAmount(sv('bms_amount', autoBmsAmount))
         setCash({
           mcCash:      sv('main_counter_cash', autoMcCash),
           popcornCash: sv('popcorn_cash',      autoPopcornCash),
@@ -210,10 +212,10 @@ export default function DayClosePage() {
           mcUpi:      autoMcUpi      > 0 ? String(autoMcUpi)      : '',
           popcornUpi: autoPopcornUpi > 0 ? String(autoPopcornUpi) : '',
           cdUpi:      autoCdUpi      > 0 ? String(autoCdUpi)      : '',
-          bmsUpi:     autoBmsUpi     > 0 ? String(autoBmsUpi)     : '',
           lcUpi:      autoLcUpi      > 0 ? String(autoLcUpi)      : '',
           parkingUpi: autoParkingUpi > 0 ? String(autoParkingUpi) : '',
         })
+        setBmsAmount(autoBmsAmount > 0 ? String(autoBmsAmount) : '')
         setCash({
           mcCash:      autoMcCash      > 0 ? String(autoMcCash)      : '',
           popcornCash: autoPopcornCash > 0 ? String(autoPopcornCash) : '',
@@ -251,7 +253,7 @@ export default function DayClosePage() {
       main_counter_upi: toNum(upi.mcUpi),
       cool_drink_upi: toNum(upi.cdUpi),
       live_counter_upi: toNum(upi.lcUpi),
-      bms_upi: toNum(upi.bmsUpi),
+      bms_amount: toNum(bmsAmount),
       parking_upi: toNum(upi.parkingUpi),
       popcorn_cash: toNum(cash.popcornCash),
       main_counter_cash: toNum(cash.mcCash),
@@ -270,12 +272,24 @@ export default function DayClosePage() {
     }
 
     // Replace other expenses in full (delete + reinsert)
-    await supabase.from('theatre_expense_others').delete().eq('day_id', dayId)
+    const { error: othersDeleteErr } = await supabase.from('theatre_expense_others').delete().eq('day_id', dayId)
+    if (othersDeleteErr) {
+      setSaving(false)
+      setToast('Failed to save other expenses')
+      setTimeout(() => setToast(''), 2500)
+      return
+    }
     const validOthers = othersRows.filter(r => r.description.trim() || Number(r.amount))
     if (validOthers.length) {
-      await supabase.from('theatre_expense_others').insert(
+      const { error: othersInsertErr } = await supabase.from('theatre_expense_others').insert(
         validOthers.map(r => ({ day_id: dayId, description: r.description.trim(), amount: Number(r.amount) || 0 }))
       )
+      if (othersInsertErr) {
+        setSaving(false)
+        setToast('Failed to save other expenses')
+        setTimeout(() => setToast(''), 2500)
+        return
+      }
     }
 
     setSaving(false)
@@ -287,7 +301,7 @@ export default function DayClosePage() {
   async function downloadDayReport() {
     await generateDayReportPdf({
       theatreName, date: date!, showSummaries, totalSales, totalExpenses, bCash,
-      exp, othersRows, staffRows,
+      exp, othersRows, staffRows, bmsAmount: toNum(bmsAmount),
     })
   }
 
@@ -393,6 +407,36 @@ export default function DayClosePage() {
               </span>
             </div>
           )}
+        </div>
+
+        <div style={{
+          background: 'var(--surface)', borderRadius: 'var(--r-card)',
+          border: '1px solid var(--card-border)', marginTop: 16, marginBottom: 20, padding: '14px 14px 12px',
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+            letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10,
+          }}>
+            COLLECTED
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>UPI</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
+              ₹{inrFmt.format(totalUpi)}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Cash</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
+              ₹{inrFmt.format(totalCash)}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>BMS</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
+              ₹{inrFmt.format(toNum(bmsAmount))}
+            </span>
+          </div>
         </div>
 
         <div style={{

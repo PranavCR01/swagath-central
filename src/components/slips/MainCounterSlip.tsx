@@ -13,11 +13,14 @@ interface MainCounterSlipProps {
   onCash: (v: string) => void
   miscDrinksMc: string
   onMiscDrinksMc: (v: string) => void
+  miscWaterMc: string
+  onMiscWaterMc: (v: string) => void
 }
 
 export default function MainCounterSlip({
   rows, setRows, upi, cash, onUpi, onCash,
   miscDrinksMc, onMiscDrinksMc,
+  miscWaterMc, onMiscWaterMc,
 }: MainCounterSlipProps) {
   const total = tabTotal(rows, MAIN_ITEMS)
   const slipTotal = (Number(upi) || 0) + (Number(cash) || 0)
@@ -42,6 +45,7 @@ export default function MainCounterSlip({
         />
       ))}
       <MiscDrinksRow label="Misc Drinks (MC)" price={PRICES.tins_mc} value={miscDrinksMc} onChange={onMiscDrinksMc} />
+      <MiscDrinksRow label="Misc Water (MC)" price={PRICES.water} value={miscWaterMc} onChange={onMiscWaterMc} />
       <TotalCard label="Main Counter Total" amount={total} />
       <PaymentSection
         upi={upi} cash={cash} total={slipTotal} slipTotal={total}

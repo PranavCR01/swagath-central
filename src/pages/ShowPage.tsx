@@ -11,6 +11,8 @@ import {
   TABS, type TabId,
   emptyRows, flatToRows, rowsToFlat, applyCarryForward,
 } from '@/components/slips/slipData'
+import { buildMismatchEntries, type MismatchEntry } from '@/lib/obMismatch'
+import { fmtTime } from '@/components/dayclose/types'
 
 // ── Status helpers ────────────────────────────────────────────────
 const STATUS_META = {
@@ -21,7 +23,7 @@ const STATUS_META = {
 
 // ── Main component ────────────────────────────────────────────────
 export default function ShowPage() {
-  const { theatreId, showId } = useParams<{
+  const { theatreId, date, showId } = useParams<{
     theatreId: string; date: string; showId: string
   }>()
   const navigate = useNavigate()
@@ -38,14 +40,18 @@ export default function ShowPage() {
   const [activeTab, setActiveTab] = useState<TabId>('main')
   const [obNote, setObNote] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [obMismatch, setObMismatch] = useState<MismatchEntry[]>([])
+  const [forwardAlert, setForwardAlert] = useState<{ nextDate: string; nextShowId: string } | null>(null)
 
   // Main counter state
   const [mcRows, setMcRows] = useState<TabRows>(emptyRows(MAIN_ITEMS))
   const [mcUpi, setMcUpi] = useState('')
   const [mcCash, setMcCash] = useState('')
   const [miscDrinksMc, setMiscDrinksMc] = useState('')
+  const [miscWaterMc, setMiscWaterMc] = useState('')
   const [mcSaving, setMcSaving] = useState(false)
   const prevMiscMcRef = useRef(0)
+  const prevMiscWaterMcRef = useRef(0)
 
   // Popcorn state
   const [pcRows, setPcRows] = useState<TabRows>(emptyRows(POPCORN_ITEMS))
@@ -68,8 +74,10 @@ export default function ShowPage() {
   const [cdLiveUpi, setCdLiveUpi] = useState('')
   const [cdLiveCash, setCdLiveCash] = useState('')
   const [miscDrinksCd, setMiscDrinksCd] = useState('')
+  const [miscWaterCd, setMiscWaterCd] = useState('')
   const [cdSaving, setCdSaving] = useState(false)
   const prevMiscCdRef = useRef(0)
+  const prevMiscWaterCdRef = useRef(0)
 
   // ── Load on mount ───────────────────────────────────────────────
   useEffect(() => {
@@ -98,11 +106,14 @@ export default function ShowPage() {
 
       if (mcData) {
         const miscMc = Number(mcData.misc_drinks_mc) || 0
+        const miscWMc = Number(mcData.misc_water_mc) || 0
         setMcRows(flatToRows(mcData as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY))
         setMcUpi(mcData.upi_amount ? String(mcData.upi_amount) : '')
         setMcCash(mcData.cash_amount ? String(mcData.cash_amount) : '')
         prevMiscMcRef.current = miscMc
         setMiscDrinksMc(miscMc ? String(miscMc) : '')
+        prevMiscWaterMcRef.current = miscWMc
+        setMiscWaterMc(miscWMc ? String(miscWMc) : '')
         setHasMc(true)
       }
       if (pcData) {
@@ -114,6 +125,7 @@ export default function ShowPage() {
       }
       if (cdData) {
         const miscCd = Number(cdData.misc_drinks_cd) || 0
+        const miscWCd = Number(cdData.misc_water_cd) || 0
         setCdRows(flatToRows(cdData as Record<string, unknown>, CD_ALL, CD_DB_KEY))
         setCdUpi(cdData.upi_amount ? String(cdData.upi_amount) : '')
         setCdCash(cdData.cash_amount ? String(cdData.cash_amount) : '')
@@ -121,6 +133,8 @@ export default function ShowPage() {
         setCdLiveCash(cdData.live_cash_amount ? String(cdData.live_cash_amount) : '')
         prevMiscCdRef.current = miscCd
         setMiscDrinksCd(miscCd ? String(miscCd) : '')
+        prevMiscWaterCdRef.current = miscWCd
+        setMiscWaterCd(miscWCd ? String(miscWCd) : '')
         setHasCd(true)
       }
       if (pkData) {
@@ -152,29 +166,69 @@ export default function ShowPage() {
 
           if (cancelled.current) return
 
+          const seenValue = (showRes.data as Show).ob_mismatch_seen_value
+          const prevLabel = `Show ${currentIdx} (${fmtTime(prevShow.start_time)})`
+          const { mismatches: sdMismatches, mcExpected: sdMc, pcExpected: sdPc, cdExpected: sdCd } =
+            buildMismatchEntries({
+              prevMcRaw: prevMcRes.data as Record<string, unknown> | null,
+              prevPcRaw: prevPcRes.data as Record<string, unknown> | null,
+              prevCdRaw: prevCdRes.data as Record<string, unknown> | null,
+              mcData, pcData, cdData, seenValue, prevLabel,
+            })
+
           let didCarry = false
-          if (!mcData && prevMcRes.data) {
-            setMcRows(applyCarryForward(
-              flatToRows(prevMcRes.data as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY),
-              MAIN_ITEMS,
-            ))
-            didCarry = true
-          }
-          if (!pcData && prevPcRes.data) {
-            setPcRows(applyCarryForward(
-              flatToRows(prevPcRes.data as Record<string, unknown>, POPCORN_ITEMS, PC_DB_KEY),
-              POPCORN_ITEMS,
-            ))
-            didCarry = true
-          }
-          if (!cdData && prevCdRes.data) {
-            setCdRows(applyCarryForward(
-              flatToRows(prevCdRes.data as Record<string, unknown>, CD_ALL, CD_DB_KEY),
-              CD_ALL,
-            ))
-            didCarry = true
-          }
+          if (!mcData && sdMc) { setMcRows(sdMc); didCarry = true }
+          if (!pcData && sdPc) { setPcRows(sdPc); didCarry = true }
+          if (!cdData && sdCd) { setCdRows(sdCd); didCarry = true }
           if (didCarry) setObNote(`OB carried from previous show`)
+          if (sdMismatches.length) setObMismatch(sdMismatches)
+        }
+      } else if (showNum === 1 && date) {
+        // Cross-day carry-forward: look back to the previous day's last show
+        const { data: prevDay } = await supabase
+          .from('theatre_days')
+          .select('id,date')
+          .eq('theatre_id', theatreId!)
+          .lt('date', date)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (!cancelled.current && prevDay) {
+          const { data: prevDayShows } = await supabase
+            .from('theatre_shows')
+            .select('id,start_time')
+            .eq('day_id', prevDay.id)
+            .order('start_time', { ascending: true })
+
+          const prevLastShow = prevDayShows?.length ? prevDayShows[prevDayShows.length - 1] : null
+
+          if (prevLastShow) {
+            const [prevMcRes, prevPcRes, prevCdRes] = await Promise.all([
+              supabase.from('theatre_main_counter').select('*').eq('show_id', prevLastShow.id).maybeSingle(),
+              supabase.from('theatre_popcorn').select('*').eq('show_id', prevLastShow.id).maybeSingle(),
+              supabase.from('theatre_cool_drinks').select('*').eq('show_id', prevLastShow.id).maybeSingle(),
+            ])
+
+            if (cancelled.current) return
+
+            const seenValue = (showRes.data as Show).ob_mismatch_seen_value
+            const { mismatches: cdMismatches, mcExpected, pcExpected, cdExpected } =
+              buildMismatchEntries({
+                prevMcRaw: prevMcRes.data as Record<string, unknown> | null,
+                prevPcRaw: prevPcRes.data as Record<string, unknown> | null,
+                prevCdRaw: prevCdRes.data as Record<string, unknown> | null,
+                mcData, pcData, cdData, seenValue,
+                prevLabel: prevDay.date,
+              })
+
+            let didCarry = false
+            if (!mcData && mcExpected) { setMcRows(mcExpected); didCarry = true }
+            if (!pcData && pcExpected) { setPcRows(pcExpected); didCarry = true }
+            if (!cdData && cdExpected) { setCdRows(cdExpected); didCarry = true }
+            if (didCarry) setObNote('OB carried from previous day')
+            if (cdMismatches.length) setObMismatch(cdMismatches)
+          }
         }
       }
 
@@ -216,6 +270,30 @@ export default function ShowPage() {
     }))
   }, [miscDrinksCd])
 
+  useEffect(() => {
+    const next = Number(miscWaterMc) || 0
+    const prev = prevMiscWaterMcRef.current
+    const delta = next - prev
+    if (delta === 0) return
+    prevMiscWaterMcRef.current = next
+    setMcRows(rows => ({
+      ...rows,
+      water: { ...rows.water, ob: String(Math.max(0, (Number(rows.water?.ob) || 0) + delta)) },
+    }))
+  }, [miscWaterMc])
+
+  useEffect(() => {
+    const next = Number(miscWaterCd) || 0
+    const prev = prevMiscWaterCdRef.current
+    const delta = next - prev
+    if (delta === 0) return
+    prevMiscWaterCdRef.current = next
+    setCdRows(rows => ({
+      ...rows,
+      c_water: { ...rows.c_water, ob: String(Math.max(0, (Number(rows.c_water?.ob) || 0) - delta)) },
+    }))
+  }, [miscWaterCd])
+
   // ── Toast helper ────────────────────────────────────────────────
   function showToast(msg: string) {
     setToast(msg)
@@ -234,6 +312,97 @@ export default function ShowPage() {
     setHasCd(!!c.data)
   }
 
+  // ── Mismatch handlers ───────────────────────────────────────────
+  async function handleMismatchUpdate(entry: MismatchEntry) {
+    if (entry.slip === 'mc') {
+      const merged = Object.fromEntries(
+        MAIN_ITEMS.map(i => [i.id, { ...mcRows[i.id], ob: entry.expectedRows[i.id]?.ob ?? mcRows[i.id]?.ob }])
+      ) as typeof mcRows
+      setMcRows(merged)
+      await supabase.from('theatre_main_counter').upsert(
+        { show_id: showId!, ...rowsToFlat(merged, MAIN_ITEMS, MC_DB_KEY), upi_amount: Number(mcUpi) || 0, cash_amount: Number(mcCash) || 0, misc_drinks_mc: Number(miscDrinksMc) || 0, misc_water_mc: Number(miscWaterMc) || 0 },
+        { onConflict: 'show_id' },
+      )
+    } else if (entry.slip === 'pc') {
+      const merged = Object.fromEntries(
+        POPCORN_ITEMS.map(i => [i.id, { ...pcRows[i.id], ob: entry.expectedRows[i.id]?.ob ?? pcRows[i.id]?.ob }])
+      ) as typeof pcRows
+      setPcRows(merged)
+      await supabase.from('theatre_popcorn').upsert(
+        { show_id: showId!, ...rowsToFlat(merged, POPCORN_ITEMS, PC_DB_KEY), bms_combo_amount: Number(pcBms) || 0, upi_amount: Number(pcUpi) || 0, cash_amount: Number(pcCash) || 0 },
+        { onConflict: 'show_id' },
+      )
+    } else {
+      const merged = Object.fromEntries(
+        CD_ALL.map(i => [i.id, { ...cdRows[i.id], ob: entry.expectedRows[i.id]?.ob ?? cdRows[i.id]?.ob }])
+      ) as typeof cdRows
+      setCdRows(merged)
+      await supabase.from('theatre_cool_drinks').upsert(
+        { show_id: showId!, ...rowsToFlat(merged, CD_ALL, CD_DB_KEY), upi_amount: Number(cdUpi) || 0, cash_amount: Number(cdCash) || 0, live_upi_amount: Number(cdLiveUpi) || 0, live_cash_amount: Number(cdLiveCash) || 0, misc_drinks_cd: Number(miscDrinksCd) || 0, misc_water_cd: Number(miscWaterCd) || 0 },
+        { onConflict: 'show_id' },
+      )
+    }
+    await supabase.from('theatre_shows').update({ ob_mismatch_seen_value: entry.fingerprint }).eq('id', showId!)
+    setObMismatch(prev => prev.filter(e => e.slip !== entry.slip))
+    showToast('✓ OB updated')
+  }
+
+  async function handleMismatchDismiss(entry: MismatchEntry) {
+    await supabase.from('theatre_shows').update({ ob_mismatch_seen_value: entry.fingerprint }).eq('id', showId!)
+    setObMismatch(prev => prev.filter(e => e.slip !== entry.slip))
+  }
+
+  // ── Forward mismatch check (runs after save if this is the last show) ──
+  async function checkForwardMismatch(slipType: 'mc' | 'pc' | 'cd') {
+    if (!showMeta || !date || !theatreId || !showId) return
+    const { data: dayShows } = await supabase
+      .from('theatre_shows').select('id,start_time')
+      .eq('day_id', showMeta.day_id)
+      .order('start_time', { ascending: true })
+    if (!dayShows?.length || dayShows[dayShows.length - 1].id !== showId) return
+
+    const { data: nextDay } = await supabase
+      .from('theatre_days').select('id,date')
+      .eq('theatre_id', theatreId)
+      .gt('date', date)
+      .order('date', { ascending: true })
+      .limit(1).maybeSingle()
+    if (!nextDay) return
+
+    const { data: nextDayShows } = await supabase
+      .from('theatre_shows').select('id,start_time')
+      .eq('day_id', nextDay.id)
+      .order('start_time', { ascending: true })
+      .limit(1)
+    if (!nextDayShows?.length) return
+    const nextFirstShowId = nextDayShows[0].id
+
+    let hasFwdMismatch = false
+    if (slipType === 'mc') {
+      const { data: nextMc } = await supabase.from('theatre_main_counter').select('*').eq('show_id', nextFirstShowId).maybeSingle()
+      if (nextMc) {
+        const nextRows = flatToRows(nextMc as Record<string, unknown>, MAIN_ITEMS, MC_DB_KEY)
+        const expected = applyCarryForward(mcRows, MAIN_ITEMS)
+        hasFwdMismatch = MAIN_ITEMS.some(i => (nextRows[i.id]?.ob ?? '0') !== (expected[i.id]?.ob ?? '0'))
+      }
+    } else if (slipType === 'pc') {
+      const { data: nextPc } = await supabase.from('theatre_popcorn').select('*').eq('show_id', nextFirstShowId).maybeSingle()
+      if (nextPc) {
+        const nextRows = flatToRows(nextPc as Record<string, unknown>, POPCORN_ITEMS, PC_DB_KEY)
+        const expected = applyCarryForward(pcRows, POPCORN_ITEMS)
+        hasFwdMismatch = POPCORN_ITEMS.some(i => (nextRows[i.id]?.ob ?? '0') !== (expected[i.id]?.ob ?? '0'))
+      }
+    } else {
+      const { data: nextCd } = await supabase.from('theatre_cool_drinks').select('*').eq('show_id', nextFirstShowId).maybeSingle()
+      if (nextCd) {
+        const nextRows = flatToRows(nextCd as Record<string, unknown>, CD_ALL, CD_DB_KEY)
+        const expected = applyCarryForward(cdRows, CD_ALL)
+        hasFwdMismatch = CD_ALL.some(i => (nextRows[i.id]?.ob ?? '0') !== (expected[i.id]?.ob ?? '0'))
+      }
+    }
+    if (hasFwdMismatch) setForwardAlert({ nextDate: nextDay.date, nextShowId: nextFirstShowId })
+  }
+
   // ── Save functions ──────────────────────────────────────────────
   async function saveMc() {
     setMcSaving(true)
@@ -246,11 +415,12 @@ export default function ShowPage() {
           upi_amount: Number(mcUpi) || 0,
           cash_amount: Number(mcCash) || 0,
           misc_drinks_mc: Number(miscDrinksMc) || 0,
+          misc_water_mc: Number(miscWaterMc) || 0,
         },
         { onConflict: 'show_id' },
       )
     setMcSaving(false)
-    if (!error) { showToast('✓ Saved'); recheckCompletion() }
+    if (!error) { showToast('✓ Saved'); recheckCompletion(); checkForwardMismatch('mc') }
     else showToast('Save failed')
   }
 
@@ -280,7 +450,7 @@ export default function ShowPage() {
       ).then(r => r.error),
     ])
     setPcSaving(false)
-    if (!pcErr && !pkErr) { showToast('✓ Saved'); recheckCompletion() }
+    if (!pcErr && !pkErr) { showToast('✓ Saved'); recheckCompletion(); checkForwardMismatch('pc') }
     else showToast('Save failed')
   }
 
@@ -297,11 +467,12 @@ export default function ShowPage() {
           live_upi_amount: Number(cdLiveUpi) || 0,
           live_cash_amount: Number(cdLiveCash) || 0,
           misc_drinks_cd: Number(miscDrinksCd) || 0,
+          misc_water_cd: Number(miscWaterCd) || 0,
         },
         { onConflict: 'show_id' },
       )
     setCdSaving(false)
-    if (!error) { showToast('✓ Saved'); recheckCompletion() }
+    if (!error) { showToast('✓ Saved'); recheckCompletion(); checkForwardMismatch('cd') }
     else showToast('Save failed')
   }
 
@@ -429,6 +600,45 @@ export default function ShowPage() {
         })}
       </div>
 
+      {/* ── Mismatch banner ───────────────────────────────────────── */}
+      {obMismatch.filter(e =>
+        (e.slip === 'mc' && activeTab === 'main') ||
+        (e.slip === 'pc' && activeTab === 'popcorn') ||
+        (e.slip === 'cd' && activeTab === 'cool')
+      ).map(entry => (
+        <div key={entry.slip} style={{
+          padding: '10px 16px', flexShrink: 0,
+          background: 'rgba(239,68,68,0.08)',
+          borderBottom: '1px solid rgba(239,68,68,0.2)',
+        }}>
+          <div style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600, marginBottom: 6 }}>
+            OB mismatch — {entry.slip === 'mc' ? 'Main Counter' : entry.slip === 'pc' ? 'Popcorn' : 'Cool Drinks'} opening balance differs from {entry.prevLabel} closing stock
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => handleMismatchUpdate(entry)}
+              style={{
+                height: 30, padding: '0 12px', background: 'var(--accent)',
+                color: 'var(--accent-ink)', border: 'none', borderRadius: 6,
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Update to match
+            </button>
+            <button
+              onClick={() => handleMismatchDismiss(entry)}
+              style={{
+                height: 30, padding: '0 12px', background: 'transparent',
+                color: 'var(--muted)', border: '1px solid var(--card-border)',
+                borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ))}
+
       {/* ── Scrollable content ────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px', overscrollBehavior: 'none' }}>
 
@@ -437,6 +647,7 @@ export default function ShowPage() {
             rows={mcRows} setRows={setMcRows}
             upi={mcUpi} cash={mcCash} onUpi={setMcUpi} onCash={setMcCash}
             miscDrinksMc={miscDrinksMc} onMiscDrinksMc={setMiscDrinksMc}
+            miscWaterMc={miscWaterMc} onMiscWaterMc={setMiscWaterMc}
           />
         )}
 
@@ -458,10 +669,49 @@ export default function ShowPage() {
             upi={cdUpi} cash={cdCash} onUpi={setCdUpi} onCash={setCdCash}
             liveUpi={cdLiveUpi} liveCash={cdLiveCash} onLiveUpi={setCdLiveUpi} onLiveCash={setCdLiveCash}
             miscDrinksCd={miscDrinksCd} onMiscDrinksCd={setMiscDrinksCd}
+            miscWaterCd={miscWaterCd} onMiscWaterCd={setMiscWaterCd}
           />
         )}
 
       </div>
+
+      {/* ── Forward mismatch alert ────────────────────────────────── */}
+      {forwardAlert && (
+        <div style={{
+          padding: '8px 16px', flexShrink: 0,
+          background: 'rgba(245,158,11,0.08)',
+          borderTop: '1px solid rgba(245,158,11,0.2)',
+        }}>
+          <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 6 }}>
+            {forwardAlert.nextDate} Show 1 opening balance may now be outdated
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => {
+                setForwardAlert(null)
+                navigate(`/theatre/${theatreId}/day/${forwardAlert.nextDate}/show/${forwardAlert.nextShowId}`)
+              }}
+              style={{
+                height: 28, padding: '0 12px', background: 'var(--accent)',
+                color: 'var(--accent-ink)', border: 'none', borderRadius: 6,
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Review
+            </button>
+            <button
+              onClick={() => setForwardAlert(null)}
+              style={{
+                height: 28, padding: '0 12px', background: 'transparent',
+                color: 'var(--muted)', border: '1px solid var(--card-border)',
+                borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Save button ───────────────────────────────────────────── */}
       <div style={{

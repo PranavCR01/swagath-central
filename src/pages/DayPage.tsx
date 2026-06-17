@@ -147,11 +147,27 @@ export default function DayPage() {
       .order('start_time', { ascending: true })
 
     if (remaining?.length) {
-      await Promise.all(
+      // Pass 1: move all to temp values to clear unique constraint slots
+      const tempResults = await Promise.all(
+        remaining.map((s, idx) =>
+          supabase.from('theatre_shows').update({ show_number: 1000 + idx }).eq('id', s.id)
+        )
+      )
+      const tempFailed = tempResults.filter(r => r.error)
+      if (tempFailed.length) {
+        console.error('Show renumbering (delete temp pass) failed for', tempFailed.length, 'shows:', tempFailed.map(f => f.error))
+      }
+
+      // Pass 2: write final correct show_number values
+      const finalResults = await Promise.all(
         remaining.map((s, idx) =>
           supabase.from('theatre_shows').update({ show_number: idx + 1 }).eq('id', s.id)
         )
       )
+      const finalFailed = finalResults.filter(r => r.error)
+      if (finalFailed.length) {
+        console.error('Show renumbering (delete final pass) failed for', finalFailed.length, 'shows:', finalFailed.map(f => f.error))
+      }
     }
 
     refetch()
@@ -233,11 +249,27 @@ export default function DayPage() {
         .order('start_time', { ascending: true })
 
       if (allShows?.length) {
-        await Promise.all(
+        // Pass 1: move all to temp values to clear unique constraint slots
+        const tempResults = await Promise.all(
+          allShows.map((s, idx) =>
+            supabase.from('theatre_shows').update({ show_number: 1000 + idx }).eq('id', s.id)
+          )
+        )
+        const tempFailed = tempResults.filter(r => r.error)
+        if (tempFailed.length) {
+          console.error('Show renumbering (insert temp pass) failed for', tempFailed.length, 'shows:', tempFailed.map(f => f.error))
+        }
+
+        // Pass 2: write final correct show_number values
+        const finalResults = await Promise.all(
           allShows.map((s, idx) =>
             supabase.from('theatre_shows').update({ show_number: idx + 1 }).eq('id', s.id)
           )
         )
+        const finalFailed = finalResults.filter(r => r.error)
+        if (finalFailed.length) {
+          console.error('Show renumbering (insert final pass) failed for', finalFailed.length, 'shows:', finalFailed.map(f => f.error))
+        }
       }
     }
 

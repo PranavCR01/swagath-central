@@ -1,8 +1,8 @@
 import { PRICES } from '@/lib/prices'
 import { calcParkingExpected, calcParkingGap } from '@/lib/calculations'
-import SlipRow, { LumpRow } from '@/components/SlipRow'
+import SlipRow from '@/components/SlipRow'
 import type { TabRows } from '@/lib/types'
-import { ColHeaders, PaymentSection, TotalCard, SectionDivider, ParkingRow } from './SlipShared'
+import { ColHeaders, PaymentSection, PayRow, TotalCard, SectionDivider, ParkingRow } from './SlipShared'
 import { POPCORN_ITEMS, tabTotal, updateRow, rupee } from './slipData'
 
 interface PopcornParkingSlipProps {
@@ -31,7 +31,7 @@ export default function PopcornParkingSlip({
   pkScooter, pkAuto, pkCar, pkUpi, pkCash, setPkScooter, setPkAuto, setPkCar, onPkUpi, onPkCash,
 }: PopcornParkingSlipProps) {
   const pcTotal = tabTotal(pcRows, POPCORN_ITEMS) // BMS excluded from total
-  const pcSlipTotal = (Number(pcUpi) || 0) + (Number(pcCash) || 0)
+  const pcSlipTotal = (Number(pcUpi) || 0) + (Number(pcCash) || 0) + (Number(pcBms) || 0)
 
   const parkingExpected = calcParkingExpected(
     Number(pkScooter) || 0, Number(pkAuto) || 0, Number(pkCar) || 0,
@@ -60,15 +60,29 @@ export default function PopcornParkingSlip({
           onWstChange={v => updateRow(setPcRows, item.id, 'wst', v)}
         />
       ))}
-      <LumpRow label="BMS Combo" value={pcBms} onChange={setPcBms} />
-
       <TotalCard label="Popcorn total" amount={pcTotal} />
 
       <SectionDivider label="Popcorn Payment" />
-      <PaymentSection
-        upi={pcUpi} cash={pcCash} total={pcSlipTotal} slipTotal={pcTotal}
-        onUpi={onPcUpi} onCash={onPcCash}
-      />
+      <div style={{
+        margin: '12px 0 4px',
+        background: 'var(--surface)',
+        border: '1px solid var(--card-border)',
+        borderRadius: 'var(--r-card)',
+        padding: '12px 16px',
+      }}>
+        <PayRow label="Cash" value={pcCash} onChange={onPcCash} />
+        <PayRow label="UPI"  value={pcUpi}  onChange={onPcUpi}  />
+        <PayRow label="BMS"  value={pcBms}  onChange={setPcBms} />
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          paddingTop: 10, marginTop: 6, borderTop: '1px solid var(--card-border)',
+        }}>
+          <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Total</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>
+            {rupee(pcSlipTotal)}
+          </span>
+        </div>
+      </div>
 
       <SectionDivider label="Parking" />
 

@@ -28,7 +28,7 @@ function itemRowsForShow(rows: (Record<string, unknown> | null)[]): ItemSaleRow[
 }
 
 export async function generateDayReportPdf({
-  theatreName, date, showSummaries, totalSales, totalExpenses, bCash, exp, othersRows, staffRows,
+  theatreName, date, showSummaries, totalSales, totalExpenses, bCash, exp, othersRows, staffRows, bmsAmount,
 }: {
   theatreName: string
   date: string
@@ -39,6 +39,7 @@ export async function generateDayReportPdf({
   exp: ExpState
   othersRows: OthersRow[]
   staffRows: StaffRow[]
+  bmsAmount: number
 }) {
   const showIds = showSummaries.map(s => s.showId)
   const { mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows } = await loadSlipDataForShows(showIds)
@@ -247,7 +248,7 @@ export async function generateDayReportPdf({
   // UPI & Cash breakdown
   sectionHdr('UPI & CASH BREAKDOWN')
   let bMcUpi = 0, bMcCash = 0, bPcUpi = 0, bPcCash = 0, bCdUpi = 0, bCdCash = 0
-  let bLcUpi = 0, bLcCash = 0, bBms = 0, bPkUpi = 0, bPkCash = 0
+  let bLcUpi = 0, bLcCash = 0, bPkUpi = 0, bPkCash = 0
   for (const s of showSummaries) {
     const mc = mcMap.get(s.showId), pc = pcMap.get(s.showId), cd = cdMap.get(s.showId), pk = pkMap.get(s.showId)
     bMcUpi += Number(mc?.upi_amount) || 0
@@ -258,16 +259,15 @@ export async function generateDayReportPdf({
     bCdCash += Number(cd?.cash_amount) || 0
     bLcUpi += Number(cd?.live_upi_amount) || 0
     bLcCash += Number(cd?.live_cash_amount) || 0
-    bBms += Number(pc?.bms_combo_amount) || 0
     bPkUpi += Number(pk?.upi_amount) || 0
     bPkCash += Number(pk?.cash_amount) || 0
   }
-  const breakdownRows: [string, number, number][] = [
+  const breakdownRows: [string, number, number | null][] = [
     ['Main Counter', bMcUpi, bMcCash],
     ['Popcorn', bPcUpi, bPcCash],
     ['Cool Drinks', bCdUpi, bCdCash],
     ['Live Counter', bLcUpi, bLcCash],
-    ['BMS', bBms, 0],
+    ['BMS', bmsAmount, null],
     ['Parking', bPkUpi, bPkCash],
   ]
   const bCols = [M, M + 100, M + 140]
@@ -280,8 +280,8 @@ export async function generateDayReportPdf({
     checkPage()
     doc.text(label, bCols[0], y)
     doc.text('Rs.' + inrFmt.format(upi), bCols[1], y, { align: 'right' })
-    doc.text('Rs.' + inrFmt.format(cash), bCols[2], y, { align: 'right' })
-    totalUpi += upi; totalCash += cash
+    doc.text(cash !== null ? 'Rs.' + inrFmt.format(cash) : '—', bCols[2], y, { align: 'right' })
+    totalUpi += upi; totalCash += (cash ?? 0)
     y += 5.5
   }
   y += 1

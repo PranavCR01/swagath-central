@@ -17,12 +17,15 @@ interface CoolDrinksSlipProps {
   onLiveCash: (v: string) => void
   miscDrinksCd: string
   onMiscDrinksCd: (v: string) => void
+  miscWaterCd: string
+  onMiscWaterCd: (v: string) => void
 }
 
 export default function CoolDrinksSlip({
   rows, setRows, upi, cash, onUpi, onCash,
   liveUpi, liveCash, onLiveUpi, onLiveCash,
   miscDrinksCd, onMiscDrinksCd,
+  miscWaterCd, onMiscWaterCd,
 }: CoolDrinksSlipProps) {
   const total = tabTotal(rows, CD_ALL)
   const slipTotal = (Number(upi) || 0) + (Number(cash) || 0)
@@ -82,6 +85,7 @@ export default function CoolDrinksSlip({
       />
 
       <MiscDrinksRow label="Misc Drinks (CD)" price={PRICES.cd_tin} value={miscDrinksCd} onChange={onMiscDrinksCd} />
+      <MiscDrinksRow label="Misc Water (CD)" price={PRICES.cd_water} value={miscWaterCd} onChange={onMiscWaterCd} />
 
       <TotalCard label="Counter Total" amount={total} />
       <div style={{ height: 16 }} />
