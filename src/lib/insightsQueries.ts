@@ -149,6 +149,7 @@ interface ShowAgg {
   showNumber: number
   occupancy: number
   revenue: number
+  profit: number
   parkingExpected: number
   parkingReported: number
 }
@@ -188,6 +189,9 @@ async function loadShowAggregates(theatreId: string, dates: string[]): Promise<S
     const parkingExpected = pk
       ? calcParkingExpected(Number(pk.scooter_count) || 0, Number(pk.auto_count) || 0, Number(pk.car_count) || 0)
       : 0
+    const revenue = mcRev + pcRev + cdRev + parkingReported
+    const cost = sumByCost(mc, MC_COST) + sumByCost(pc, PC_COST) + sumByCost(cd, CD_COST)
+    const profit = revenue - cost
 
     return {
       showId,
@@ -195,7 +199,8 @@ async function loadShowAggregates(theatreId: string, dates: string[]): Promise<S
       date: dayMap.get(s.day_id as string) ?? '',
       showNumber: s.show_number as number,
       occupancy: Number(s.occupancy_pct) || 0,
-      revenue: mcRev + pcRev + cdRev + parkingReported,
+      revenue,
+      profit,
       parkingExpected,
       parkingReported,
     }
@@ -224,6 +229,33 @@ export async function fetchDailyRevenue(theatreId: string | 'both', days: number
       out.push(theatreId === 'both'
         ? { date, revenue: byDate.get(date) ?? 0, theatreId: t.id }
         : { date, revenue: byDate.get(date) ?? 0 })
+    }
+  }
+  return out
+}
+
+// ── 1b. Daily profit ────────────────────────────────────────────────────
+export interface DailyProfitPoint {
+  date: string
+  profit: number
+  theatreId?: string
+}
+
+export async function fetchDailyProfit(theatreId: string | 'both', days: number): Promise<DailyProfitPoint[]> {
+  const dates = dateRange(days)
+  const theatres = await resolveTheatreIds(theatreId)
+  const out: DailyProfitPoint[] = []
+
+  for (const t of theatres) {
+    const aggs = await loadShowAggregates(t.id, dates)
+    const byDate = new Map<string, number>()
+    for (const date of dates) byDate.set(date, 0)
+    for (const a of aggs) byDate.set(a.date, (byDate.get(a.date) ?? 0) + a.profit)
+
+    for (const date of dates) {
+      out.push(theatreId === 'both'
+        ? { date, profit: byDate.get(date) ?? 0, theatreId: t.id }
+        : { date, profit: byDate.get(date) ?? 0 })
     }
   }
   return out

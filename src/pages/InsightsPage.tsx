@@ -5,9 +5,9 @@ import { useTheatres } from '@/hooks/useTheatres'
 import { LineChart, rupee, type LineChartSeries } from '@/components/charts/LineChart'
 import { HBarChart } from '@/components/charts/HBarChart'
 import {
-  fetchDailyRevenue, fetchShowPerformance, fetchTopItems,
+  fetchDailyRevenue, fetchDailyProfit, fetchShowPerformance, fetchTopItems,
   fetchParkingGapTrend, fetchCateringSuggestions,
-  type DailyRevenuePoint, type ShowPerformancePoint, type TopItem,
+  type DailyRevenuePoint, type DailyProfitPoint, type ShowPerformancePoint, type TopItem,
   type ParkingGapPoint, type CateringSuggestions,
 } from '@/lib/insightsQueries'
 
@@ -236,12 +236,14 @@ export default function InsightsPage() {
   const isWide = useIsWide()
 
   const [revenue, setRevenue] = useState<DailyRevenuePoint[]>([])
+  const [profitData, setProfitData] = useState<DailyProfitPoint[]>([])
   const [perf, setPerf] = useState<ShowPerformancePoint[]>([])
   const [tops, setTops] = useState<TopItem[]>([])
   const [parkingGap, setParkingGap] = useState<ParkingGapPoint[]>([])
   const [catering, setCatering] = useState<CateringSuggestions | null>(null)
   const [loading, setLoading] = useState(true)
   const [revenueLoading, setRevenueLoading] = useState(true)
+  const [profitLoading, setProfitLoading] = useState(true)
 
   const singleId = theatreSel === 'both' ? theatres[0]?.id : theatreSel
   const singleName = theatreSel === 'both' ? (theatres[0]?.name ?? '') : (theatres.find(t => t.id === theatreSel)?.name ?? '')
@@ -251,24 +253,29 @@ export default function InsightsPage() {
     let cancelled = false
     setLoading(true)
     setRevenueLoading(true)
+    setProfitLoading(true)
     setRevenue([])       // clear stale data immediately so revSeries never mixes old/new theatreSel
+    setProfitData([])
     setParkingGap([])
     const target = theatreSel === 'both' ? 'both' : theatreSel
     Promise.all([
       fetchDailyRevenue(target, range.days),
+      fetchDailyProfit(target, range.days),
       fetchShowPerformance(target, range.days),
       fetchTopItems(target, range.days),
       singleId ? fetchParkingGapTrend(singleId, 30) : Promise.resolve([]),
       singleId ? fetchCateringSuggestions(singleId) : Promise.resolve(null),
-    ]).then(([rev, perfData, topsData, gap, cater]) => {
+    ]).then(([rev, prof, perfData, topsData, gap, cater]) => {
       if (cancelled) return
       setRevenue(rev)
+      setProfitData(prof)
       setPerf(perfData)
       setTops(topsData)
       setParkingGap(gap)
       setCatering(cater)
       setLoading(false)
       setRevenueLoading(false)
+      setProfitLoading(false)
     })
     return () => { cancelled = true }
   }, [theatreSel, range.days, singleId, theatres.length])
@@ -304,6 +311,32 @@ export default function InsightsPage() {
     for (const p of revenue) byDate.set(p.date, (byDate.get(p.date) ?? 0) + p.revenue)
     return [...byDate.values()].filter(v => v > 0).length
   }, [revenue])
+
+  const profitSeries: LineChartSeries[] = useMemo(() => {
+    if (theatreSel === 'both') {
+      const raw = theatres.map((t, i) => ({
+        id: t.id, name: t.name, color: SERIES_COLORS[i % SERIES_COLORS.length],
+        points: profitData.filter(p => p.theatreId === t.id).map(p => ({ label: fmtDateLabel(p.date, range.days), v: p.profit, date: p.date })),
+      })).filter(s => s.points.length > 0)
+
+      if (raw.length < 2) return raw.map(s => ({ ...s, points: s.points.map(({ label, v }) => ({ label, v })) }))
+
+      const dates0 = new Set(raw[0].points.map(p => p.date))
+      const dates1 = new Set(raw[1].points.map(p => p.date))
+      const common = [...dates0].filter(d => dates1.has(d))
+
+      return raw.map(s => ({
+        ...s,
+        points: s.points.filter(p => common.includes(p.date)).map(({ label, v }) => ({ label, v })),
+      }))
+    }
+    return [{
+      id: theatreSel, name: singleName, color: '#f59e0b',
+      points: profitData.map(p => ({ label: fmtDateLabel(p.date, range.days), v: p.profit })),
+    }]
+  }, [profitData, theatreSel, theatres, range.days, singleName])
+
+  const totalProfit = useMemo(() => profitSeries.reduce((s, ser) => s + ser.points.reduce((a, p) => a + p.v, 0), 0), [profitSeries])
 
   if (loading && theatres.length === 0) {
     return (
@@ -378,6 +411,33 @@ export default function InsightsPage() {
                   {theatreSel === 'both' && (
                     <div style={{ display: 'flex', gap: 18, justifyContent: 'center', marginTop: 14 }}>
                       {revSeries.map(s => (
+                        <span key={s.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'var(--muted)' }}>
+                          <span style={{ width: 16, height: 3, borderRadius: 2, background: s.color }} />{s.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </InsightCard>
+          </div>
+
+          {/* Profit overview */}
+          <div style={{ gridColumn: isWide ? '1 / -1' : 'auto' }}>
+            <InsightCard
+              title="Profit Overview"
+              sub={`Last ${range.days} days`}
+              action={<div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 18, fontWeight: 600, color: 'var(--accent)', textShadow: '0 0 16px var(--accent-glow)' }}>{rupee(totalProfit)}</div>
+                <div style={{ fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Total</div>
+              </div>}
+            >
+              {profitLoading || daysWithData < 3 ? <EmptyState /> : (
+                <>
+                  <LineChart series={profitSeries} height={216} />
+                  {theatreSel === 'both' && (
+                    <div style={{ display: 'flex', gap: 18, justifyContent: 'center', marginTop: 14 }}>
+                      {profitSeries.map(s => (
                         <span key={s.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'var(--muted)' }}>
                           <span style={{ width: 16, height: 3, borderRadius: 2, background: s.color }} />{s.name}
                         </span>
