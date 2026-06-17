@@ -280,13 +280,15 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
   // expenses + B.Cash
   const { data: expRow } = await supabase.from('theatre_expenses').select('*').eq('day_id', loaded.dayId).maybeSingle()
   const e = (expRow ?? {}) as Record<string, unknown>
+  const { data: othersRows } = await supabase.from('theatre_expense_others').select('amount').eq('day_id', loaded.dayId)
+  const othersTotal = (othersRows ?? []).reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const expObj = {
     wages: Number(e.wages) || 0,
     staff_coffee: Number(e.staff_coffee) || 0,
     water_cans: Number(e.water_cans) || 0,
     lab_food: Number(e.lab_food) || 0,
     wastage: Number(e.wastage) || 0,
-    others_amount: Number(e.others_amount) || 0,
+    others_amount: othersTotal,
   }
   const expenses = Object.values(expObj).reduce((s, v) => s + v, 0)
   const bCash = computeBCash(totalSales, expObj)

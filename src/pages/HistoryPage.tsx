@@ -81,18 +81,29 @@ async function buildHistoryRows(
   }
 
   // Expenses (to determine closed status + B.Cash)
-  const { data: expData } = await supabase
-    .from('theatre_expenses')
-    .select('day_id,wages,staff_coffee,water_cans,lab_food,wastage,others_amount')
-    .in('day_id', safeIn(dayIds))
+  const [{ data: expData }, { data: othersData }] = await Promise.all([
+    supabase
+      .from('theatre_expenses')
+      .select('day_id,wages,staff_coffee,water_cans,lab_food,wastage')
+      .in('day_id', safeIn(dayIds)),
+    supabase
+      .from('theatre_expense_others')
+      .select('day_id,amount')
+      .in('day_id', safeIn(dayIds)),
+  ])
+
+  const othersSumPerDay: Record<string, number> = {}
+  for (const r of (othersData ?? []) as { day_id: string; amount: number }[]) {
+    othersSumPerDay[r.day_id] = (othersSumPerDay[r.day_id] ?? 0) + (Number(r.amount) || 0)
+  }
 
   const closedDays = new Set<string>()
   const bCashMap: Record<string, number> = {}
-  type ExpR = { day_id: string; wages: number; staff_coffee: number; water_cans: number; lab_food: number; wastage: number; others_amount: number }
+  type ExpR = { day_id: string; wages: number; staff_coffee: number; water_cans: number; lab_food: number; wastage: number }
   for (const e of (expData ?? []) as ExpR[]) {
     closedDays.add(e.day_id)
     const totalExp = (e.wages || 0) + (e.staff_coffee || 0) + (e.water_cans || 0) +
-      (e.lab_food || 0) + (e.wastage || 0) + (e.others_amount || 0)
+      (e.lab_food || 0) + (e.wastage || 0) + (othersSumPerDay[e.day_id] ?? 0)
     bCashMap[e.day_id] = (totalsPerDay[e.day_id] ?? 0) - totalExp
   }
 
