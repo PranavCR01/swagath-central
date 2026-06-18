@@ -118,7 +118,7 @@ export default function DayClosePage() {
       const summaries: ShowSummary[] = shows.map(s => {
         const mc = mcMap[s.id], pc = pcMap[s.id], cd = cdMap[s.id], pk = pkMap[s.id]
         const mcTotal = sumBySale(mc ?? null, MC_PRICE)
-        const popcornTotal = sumBySale(pc ?? null, PC_PRICE) + (Number(pc?.bms_combo_amount) || 0)
+        const popcornTotal = sumBySale(pc ?? null, PC_PRICE)
         const cdDrinksTotal = sumBySale(cd ?? null, CD_DRINKS_PRICE)
         const cdLiveTotal = sumBySale(cd ?? null, CD_LIVE_PRICE)
         const mcCost = sumByCost(mc ?? null, MC_COST)

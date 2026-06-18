@@ -183,7 +183,7 @@ async function loadShowAggregates(theatreId: string, dates: string[]): Promise<S
     const pk = pkMap.get(showId) ?? null
 
     const mcRev = sumBySale(mc, MC_PRICE)
-    const pcRev = sumBySale(pc, PC_PRICE) + (Number(pc?.bms_combo_amount) || 0)
+    const pcRev = sumBySale(pc, PC_PRICE)
     const cdRev = sumBySale(cd, CD_PRICE)
     const parkingReported = (Number(pk?.upi_amount) || 0) + (Number(pk?.cash_amount) || 0)
     const parkingExpected = pk

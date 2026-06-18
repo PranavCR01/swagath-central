@@ -72,6 +72,11 @@ export default function DayPage() {
   const [silverTickets, setSilverTickets] = useState('')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [toast, setToast] = useState<string | null>(null)
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2000)
+  }
 
   // Derived ticket values (not state)
   const totalTickets = (Number(boxTickets) || 0) + (Number(goldTickets) || 0) + (Number(silverTickets) || 0)
@@ -137,7 +142,7 @@ export default function DayPage() {
     const confirmed = window.confirm('Delete this show? This will also remove all slip data entered for it.')
     if (!confirmed) return
     const { error } = await supabase.from('theatre_shows').delete().eq('id', showId)
-    if (error) { console.error(error); return }
+    if (error) { console.error(error); showToast('Failed to delete show — try again'); return }
 
     // Re-fetch remaining shows ordered by start_time and re-number them sequentially
     const { data: remaining } = await supabase
@@ -156,6 +161,7 @@ export default function DayPage() {
       const tempFailed = tempResults.filter(r => r.error)
       if (tempFailed.length) {
         console.error('Show renumbering (delete temp pass) failed for', tempFailed.length, 'shows:', tempFailed.map(f => f.error))
+        showToast('Show order may be incorrect — please refresh')
       }
 
       // Pass 2: write final correct show_number values
@@ -167,6 +173,7 @@ export default function DayPage() {
       const finalFailed = finalResults.filter(r => r.error)
       if (finalFailed.length) {
         console.error('Show renumbering (delete final pass) failed for', finalFailed.length, 'shows:', finalFailed.map(f => f.error))
+        showToast('Show order may be incorrect — please refresh')
       }
     }
 
@@ -258,6 +265,7 @@ export default function DayPage() {
         const tempFailed = tempResults.filter(r => r.error)
         if (tempFailed.length) {
           console.error('Show renumbering (insert temp pass) failed for', tempFailed.length, 'shows:', tempFailed.map(f => f.error))
+          showToast('Show order may be incorrect — please refresh')
         }
 
         // Pass 2: write final correct show_number values
@@ -269,6 +277,7 @@ export default function DayPage() {
         const finalFailed = finalResults.filter(r => r.error)
         if (finalFailed.length) {
           console.error('Show renumbering (insert final pass) failed for', finalFailed.length, 'shows:', finalFailed.map(f => f.error))
+          showToast('Show order may be incorrect — please refresh')
         }
       }
     }
@@ -738,6 +747,22 @@ export default function DayPage() {
             </form>
           </div>
         </>
+      )}
+
+      {/* ── Toast ─────────────────────────────────────────────────── */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 80, left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'var(--surface-2)', border: '1px solid var(--card-border)',
+          color: 'var(--green)', borderRadius: 999,
+          padding: '8px 20px', fontSize: 14, fontWeight: 600,
+          pointerEvents: 'none', zIndex: 50,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          whiteSpace: 'nowrap',
+        }}>
+          {toast}
+        </div>
       )}
     </div>
   )

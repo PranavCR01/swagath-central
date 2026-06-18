@@ -314,41 +314,57 @@ export default function ShowPage() {
 
   // ── Mismatch handlers ───────────────────────────────────────────
   async function handleMismatchUpdate(entry: MismatchEntry) {
+    let slipErr: { message: string } | null = null
     if (entry.slip === 'mc') {
       const merged = Object.fromEntries(
         MAIN_ITEMS.map(i => [i.id, { ...mcRows[i.id], ob: entry.expectedRows[i.id]?.ob ?? mcRows[i.id]?.ob }])
       ) as typeof mcRows
       setMcRows(merged)
-      await supabase.from('theatre_main_counter').upsert(
+      const { error } = await supabase.from('theatre_main_counter').upsert(
         { show_id: showId!, ...rowsToFlat(merged, MAIN_ITEMS, MC_DB_KEY), upi_amount: Number(mcUpi) || 0, cash_amount: Number(mcCash) || 0, misc_drinks_mc: Number(miscDrinksMc) || 0, misc_water_mc: Number(miscWaterMc) || 0 },
         { onConflict: 'show_id' },
       )
+      slipErr = error
     } else if (entry.slip === 'pc') {
       const merged = Object.fromEntries(
         POPCORN_ITEMS.map(i => [i.id, { ...pcRows[i.id], ob: entry.expectedRows[i.id]?.ob ?? pcRows[i.id]?.ob }])
       ) as typeof pcRows
       setPcRows(merged)
-      await supabase.from('theatre_popcorn').upsert(
+      const { error } = await supabase.from('theatre_popcorn').upsert(
         { show_id: showId!, ...rowsToFlat(merged, POPCORN_ITEMS, PC_DB_KEY), bms_combo_amount: Number(pcBms) || 0, upi_amount: Number(pcUpi) || 0, cash_amount: Number(pcCash) || 0 },
         { onConflict: 'show_id' },
       )
+      slipErr = error
     } else {
       const merged = Object.fromEntries(
         CD_ALL.map(i => [i.id, { ...cdRows[i.id], ob: entry.expectedRows[i.id]?.ob ?? cdRows[i.id]?.ob }])
       ) as typeof cdRows
       setCdRows(merged)
-      await supabase.from('theatre_cool_drinks').upsert(
+      const { error } = await supabase.from('theatre_cool_drinks').upsert(
         { show_id: showId!, ...rowsToFlat(merged, CD_ALL, CD_DB_KEY), upi_amount: Number(cdUpi) || 0, cash_amount: Number(cdCash) || 0, live_upi_amount: Number(cdLiveUpi) || 0, live_cash_amount: Number(cdLiveCash) || 0, misc_drinks_cd: Number(miscDrinksCd) || 0, misc_water_cd: Number(miscWaterCd) || 0 },
         { onConflict: 'show_id' },
       )
+      slipErr = error
     }
-    await supabase.from('theatre_shows').update({ ob_mismatch_seen_value: entry.fingerprint }).eq('id', showId!)
+    if (slipErr) {
+      showToast('Failed to update OB — try again')
+      return
+    }
+    const { error: seenErr } = await supabase.from('theatre_shows').update({ ob_mismatch_seen_value: entry.fingerprint }).eq('id', showId!)
+    if (seenErr) {
+      showToast('Failed to update OB — try again')
+      return
+    }
     setObMismatch(prev => prev.filter(e => e.slip !== entry.slip))
     showToast('✓ OB updated')
   }
 
   async function handleMismatchDismiss(entry: MismatchEntry) {
-    await supabase.from('theatre_shows').update({ ob_mismatch_seen_value: entry.fingerprint }).eq('id', showId!)
+    const { error } = await supabase.from('theatre_shows').update({ ob_mismatch_seen_value: entry.fingerprint }).eq('id', showId!)
+    if (error) {
+      showToast('Failed to dismiss — try again')
+      return
+    }
     setObMismatch(prev => prev.filter(e => e.slip !== entry.slip))
   }
 
