@@ -240,7 +240,7 @@ export default function DayClosePage() {
     if (!dayId) return
     setSaving(true)
     // wages field comes directly from the Expenses form input — never derived by summing staff wage rows
-    await supabase.from('theatre_expenses').upsert({
+    const { error: expensesErr } = await supabase.from('theatre_expenses').upsert({
       day_id: dayId,
       wages: toNum(exp.wages),
       staff_coffee: toNum(exp.staffCoffee),
@@ -261,14 +261,32 @@ export default function DayClosePage() {
       live_counter_cash: toNum(cash.lcCash),
       parking_cash: toNum(cash.parkingCash),
     }, { onConflict: 'day_id' })
+    if (expensesErr) {
+      setSaving(false)
+      setToast('Failed to save expenses')
+      setTimeout(() => setToast(''), 2500)
+      return
+    }
 
     // Replace staff wages in full (delete + reinsert)
-    await supabase.from('theatre_staff_wages').delete().eq('day_id', dayId)
+    const { error: wagesDeleteErr } = await supabase.from('theatre_staff_wages').delete().eq('day_id', dayId)
+    if (wagesDeleteErr) {
+      setSaving(false)
+      setToast('Failed to save staff wages')
+      setTimeout(() => setToast(''), 2500)
+      return
+    }
     const valid = staffRows.filter(r => r.name.trim())
     if (valid.length) {
-      await supabase.from('theatre_staff_wages').insert(
+      const { error: wagesInsertErr } = await supabase.from('theatre_staff_wages').insert(
         valid.map(r => ({ day_id: dayId, staff_name: r.name.trim(), amount: toNum(r.amount) }))
       )
+      if (wagesInsertErr) {
+        setSaving(false)
+        setToast('Failed to save staff wages')
+        setTimeout(() => setToast(''), 2500)
+        return
+      }
     }
 
     // Replace other expenses in full (delete + reinsert)
