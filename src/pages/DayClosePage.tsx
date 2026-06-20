@@ -58,6 +58,7 @@ export default function DayClosePage() {
   const costOfGoods = totalSales - totalProfit
   const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.parkingUpi)
   const totalCash = [cash.popcornCash, cash.mcCash, cash.cdCash, cash.lcCash, cash.parkingCash].reduce((s, v) => s + toNum(v), 0)
+  const totalCollected = totalUpi + totalCash + toNum(bmsAmount)
   const othersTotal = othersRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const expObj = {
     wages: toNum(exp.wages),
@@ -456,10 +457,20 @@ export default function DayClosePage() {
               ₹{inrFmt.format(totalCash)}
             </span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 13, color: 'var(--muted)' }}>BMS</span>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
               ₹{inrFmt.format(toNum(bmsAmount))}
+            </span>
+          </div>
+          <div style={{ height: 1, background: 'var(--card-border)', marginBottom: 8 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Total</span>
+            <span style={{
+              fontFamily: 'var(--mono)', fontSize: 20, fontWeight: 700,
+              color: 'var(--accent)',
+            }}>
+              ₹{inrFmt.format(totalCollected)}
             </span>
           </div>
         </div>

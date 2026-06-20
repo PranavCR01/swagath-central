@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useTheatres } from '@/hooks/useTheatres'
 import { getTodayIST, safeIn } from '@/lib/utils'
+import { loadShowAggregates } from '@/lib/insightsQueries'
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 const rupee = (n: number) => '₹' + inrFmt.format(Math.round(n))
@@ -30,6 +31,7 @@ interface HistoryRow {
   totalSales: number
   bCash: number | null
   isClosed: boolean
+  netProfit: number | null
 }
 
 // ── Data layer ──────────────────────────────────────────────────
@@ -44,27 +46,36 @@ async function buildHistoryRows(
 
   const dayIds = days.map(d => d.id)
 
-  // Batch: shows for these days
-  const { data: showsData } = await supabase
-    .from('theatre_shows').select('id,day_id')
-    .in('day_id', safeIn(dayIds))
+  // Build theatre → distinct dates map for loadShowAggregates calls
+  const theatreDatesMap = new Map<string, string[]>()
+  for (const d of days) {
+    const arr = theatreDatesMap.get(d.theatre_id) ?? []
+    if (!arr.includes(d.date)) arr.push(d.date)
+    theatreDatesMap.set(d.theatre_id, arr)
+  }
 
+  // Wave 1: shows + expenses + per-theatre gross profit — all parallel, no cross-dependencies
+  const [showsRes, expRes, othersRes, allAggs] = await Promise.all([
+    supabase.from('theatre_shows').select('id,day_id').in('day_id', safeIn(dayIds)),
+    supabase.from('theatre_expenses').select('day_id,wages,staff_coffee,water_cans,lab_food,wastage').in('day_id', safeIn(dayIds)),
+    supabase.from('theatre_expense_others').select('day_id,amount').in('day_id', safeIn(dayIds)),
+    Promise.all(
+      Array.from(theatreDatesMap.entries()).map(([tid, tdates]) => loadShowAggregates(tid, tdates))
+    ).then(results => results.flat()),
+  ])
+
+  // Build show-count and show-ID maps from wave 1 results
   const showToDay: Record<string, string> = {}
   const showsPerDay: Record<string, number> = {}
   const showIds: string[] = []
-  for (const s of showsData ?? []) {
+  for (const s of showsRes.data ?? []) {
     showToDay[s.id] = s.day_id
     showsPerDay[s.day_id] = (showsPerDay[s.day_id] ?? 0) + 1
     showIds.push(s.id)
   }
 
-  // Batch: slip totals for those shows
+  // Wave 2: slip payment totals for Gross Revenue (needs showIds from wave 1)
   const totalsPerDay: Record<string, number> = {}
-  function addToDay(showId: string, amt: number) {
-    const dId = showToDay[showId]
-    if (dId) totalsPerDay[dId] = (totalsPerDay[dId] ?? 0) + amt
-  }
-
   if (showIds.length) {
     const [mc, pc, cd, pk] = await Promise.all([
       supabase.from('theatre_main_counter').select('show_id,upi_amount,cash_amount').in('show_id', safeIn(showIds)),
@@ -74,37 +85,38 @@ async function buildHistoryRows(
     ])
     type SlipR = { show_id: string; upi_amount: number; cash_amount: number }
     type PkR = { show_id: string; upi_amount: number | null; cash_amount: number | null }
+    const addToDay = (sid: string, amt: number) => {
+      const dId = showToDay[sid]
+      if (dId) totalsPerDay[dId] = (totalsPerDay[dId] ?? 0) + amt
+    }
     for (const r of (mc.data ?? []) as SlipR[]) addToDay(r.show_id, (r.upi_amount || 0) + (r.cash_amount || 0))
     for (const r of (pc.data ?? []) as SlipR[]) addToDay(r.show_id, (r.upi_amount || 0) + (r.cash_amount || 0))
     for (const r of (cd.data ?? []) as SlipR[]) addToDay(r.show_id, (r.upi_amount || 0) + (r.cash_amount || 0))
     for (const r of (pk.data ?? []) as PkR[]) addToDay(r.show_id, (r.upi_amount || 0) + (r.cash_amount || 0))
   }
 
-  // Expenses (to determine closed status + B.Cash)
-  const [{ data: expData }, { data: othersData }] = await Promise.all([
-    supabase
-      .from('theatre_expenses')
-      .select('day_id,wages,staff_coffee,water_cans,lab_food,wastage')
-      .in('day_id', safeIn(dayIds)),
-    supabase
-      .from('theatre_expense_others')
-      .select('day_id,amount')
-      .in('day_id', safeIn(dayIds)),
-  ])
+  // Gross profit per day summed from showAgg results (already flat)
+  const grossProfitByDay: Record<string, number> = {}
+  for (const a of allAggs) {
+    grossProfitByDay[a.dayId] = (grossProfitByDay[a.dayId] ?? 0) + a.profit
+  }
 
+  // Expenses → closed status, B.Cash, total expenses per day
   const othersSumPerDay: Record<string, number> = {}
-  for (const r of (othersData ?? []) as { day_id: string; amount: number }[]) {
+  for (const r of (othersRes.data ?? []) as { day_id: string; amount: number }[]) {
     othersSumPerDay[r.day_id] = (othersSumPerDay[r.day_id] ?? 0) + (Number(r.amount) || 0)
   }
 
   const closedDays = new Set<string>()
   const bCashMap: Record<string, number> = {}
+  const totalExpByDay: Record<string, number> = {}
   type ExpR = { day_id: string; wages: number; staff_coffee: number; water_cans: number; lab_food: number; wastage: number }
-  for (const e of (expData ?? []) as ExpR[]) {
+  for (const e of (expRes.data ?? []) as ExpR[]) {
     closedDays.add(e.day_id)
     const totalExp = (e.wages || 0) + (e.staff_coffee || 0) + (e.water_cans || 0) +
       (e.lab_food || 0) + (e.wastage || 0) + (othersSumPerDay[e.day_id] ?? 0)
     bCashMap[e.day_id] = (totalsPerDay[e.day_id] ?? 0) - totalExp
+    totalExpByDay[e.day_id] = totalExp
   }
 
   return days.map(d => ({
@@ -116,6 +128,9 @@ async function buildHistoryRows(
     totalSales: totalsPerDay[d.id] ?? 0,
     bCash: closedDays.has(d.id) ? bCashMap[d.id] : null,
     isClosed: closedDays.has(d.id),
+    netProfit: closedDays.has(d.id)
+      ? (grossProfitByDay[d.id] ?? 0) - (totalExpByDay[d.id] ?? 0)
+      : null,
   }))
 }
 
@@ -262,6 +277,11 @@ function TheatreRow({ row, onOpen }: { row: HistoryRow; onOpen: (row: HistoryRow
         <div style={{ fontFamily: 'var(--mono)', fontSize: 15, fontWeight: 700, color: 'var(--accent)' }}>
           {rupee(row.totalSales)}
         </div>
+        {row.isClosed && row.netProfit !== null && (
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 12, marginTop: 2, color: row.netProfit >= 0 ? 'var(--green)' : 'var(--red)' }}>
+            Net {rupee(row.netProfit)}
+          </div>
+        )}
         <div style={{ marginTop: 4 }}>
           <StatusBadge isClosed={row.isClosed} />
         </div>

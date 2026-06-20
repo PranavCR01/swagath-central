@@ -1,6 +1,9 @@
 import { Calendar, Pencil, Trash2 } from 'lucide-react'
 import { fmtTime } from '@/components/dayclose/types'
 
+const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
+const rupee = (n: number) => '₹' + inrFmt.format(Math.round(n))
+
 const STATUS_META = {
   complete: { label: 'Complete',    dot: '✓', bg: 'rgba(34,197,94,0.16)',   fg: '#22c55e' },
   pending:  { label: 'Not Started', dot: '○', bg: 'rgba(255,255,255,0.05)', fg: 'rgba(255,255,255,0.38)' },
@@ -25,12 +28,15 @@ interface ShowCardProps {
   yesterdayIST?: string
   onEdit?: (e: React.MouseEvent) => void
   onDelete?: (e: React.MouseEvent) => void
+  showRevenue?: number
+  showProfit?: number
 }
 
 export default function ShowCard({
   showNumber, startTime, movieName, language, isFanShow,
   ticketCount, occupancyPct, isComplete, onClick,
   showDate, todayIST, yesterdayIST, onEdit, onDelete,
+  showRevenue, showProfit,
 }: ShowCardProps) {
   const displayTime = fmtTime(startTime)
   const statusKey = isComplete ? 'complete' : 'pending'
@@ -101,8 +107,18 @@ export default function ShowCard({
           </div>
         </div>
 
-        {/* Status + revenue */}
+        {/* Status + financials */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+          {showRevenue !== undefined && (
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>
+              {rupee(showRevenue)}
+            </div>
+          )}
+          {showProfit !== undefined && (
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: showProfit >= 0 ? 'var(--green)' : 'var(--red)' }}>
+              GP {rupee(showProfit)}
+            </div>
+          )}
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             height: 24, padding: '0 10px', borderRadius: 999,

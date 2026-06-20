@@ -156,7 +156,7 @@ interface ShowAgg {
 }
 
 // Loads all shows + slip totals for a theatre over a date range
-async function loadShowAggregates(theatreId: string, dates: string[]): Promise<ShowAgg[]> {
+export async function loadShowAggregates(theatreId: string, dates: string[]): Promise<ShowAgg[]> {
   const { data: days } = await supabase
     .from('theatre_days').select('id,date')
     .eq('theatre_id', theatreId).in('date', dates)
@@ -193,7 +193,7 @@ async function loadShowAggregates(theatreId: string, dates: string[]): Promise<S
     const parkingExpected = pk
       ? calcParkingExpected(Number(pk.scooter_count) || 0, Number(pk.auto_count) || 0, Number(pk.car_count) || 0)
       : 0
-    const revenue = mcRev + pcRev + cdRev + parkingReported
+    const revenue = mcRev + pcRev + cdRev + parkingExpected
     const showDate = dayMap.get(s.day_id as string) ?? ''
     const cost = sumByCost(mc, buildResolvedCostMap(history, MC_COST, showDate))
       + sumByCost(pc, buildResolvedCostMap(history, PC_COST, showDate))

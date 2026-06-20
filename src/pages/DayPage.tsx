@@ -7,6 +7,10 @@ import ShowCard from '@/components/ShowCard'
 import type { Show } from '@/lib/types'
 import { Calendar, Clock, User } from 'lucide-react'
 import { getTodayIST, getYesterdayIST } from '@/lib/utils'
+import { loadSlipDataForShows } from '@/lib/loadSlipData'
+import { fetchCostHistory, buildResolvedCostMap, CD_COL_TO_HIST_KEY } from '@/lib/costHistory'
+import { sumBySale, sumByCost, MC_PRICE, PC_PRICE, CD_PRICE, MC_COST, PC_COST, CD_COST } from '@/lib/insightsQueries'
+import { calcParkingExpected } from '@/lib/calculations'
 
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 
@@ -83,27 +87,44 @@ export default function DayPage() {
   const occupancyPct = capacity ? (totalTickets / capacity) * 100 : 0
   const occupancyDisplay = occupancyPct.toFixed(1) + '%'
 
-  const [runningTotal, setRunningTotal] = useState<number | null>(null)
+  const [showFinancials, setShowFinancials] = useState<Record<string, { revenue: number; profit: number }>>({})
 
   useEffect(() => {
-    if (!shows.length) { setRunningTotal(null); return }
+    if (!shows.length || !theatreId) { setShowFinancials({}); return }
     const showIds = shows.map(s => s.id)
-    async function fetchTotals() {
-      const [mcRes, pcRes, cdRes, pkRes] = await Promise.all([
-        supabase.from('theatre_main_counter').select('upi_amount,cash_amount').in('show_id', showIds),
-        supabase.from('theatre_popcorn').select('upi_amount,cash_amount').in('show_id', showIds),
-        supabase.from('theatre_cool_drinks').select('upi_amount,cash_amount').in('show_id', showIds),
-        supabase.from('theatre_parking').select('upi_amount,cash_amount').in('show_id', showIds),
+    async function fetchShowData() {
+      const [{ mc, pc, cd, parking }, history] = await Promise.all([
+        loadSlipDataForShows(showIds),
+        fetchCostHistory(theatreId!),
       ])
-      let total = 0
-      for (const r of mcRes.data ?? []) total += (r.upi_amount || 0) + (r.cash_amount || 0)
-      for (const r of pcRes.data ?? []) total += (r.upi_amount || 0) + (r.cash_amount || 0)
-      for (const r of cdRes.data ?? []) total += (r.upi_amount || 0) + (r.cash_amount || 0)
-      for (const r of pkRes.data ?? []) total += (r.upi_amount || 0) + (r.cash_amount || 0)
-      setRunningTotal(total)
+      const mcMap = Object.fromEntries(mc.map(r => [(r as Record<string,unknown>).show_id as string, r as Record<string, unknown>]))
+      const pcMap = Object.fromEntries(pc.map(r => [(r as Record<string,unknown>).show_id as string, r as Record<string, unknown>]))
+      const cdMap = Object.fromEntries(cd.map(r => [(r as Record<string,unknown>).show_id as string, r as Record<string, unknown>]))
+      const pkMap = Object.fromEntries(parking.map(r => [r.show_id, r]))
+      const rMcCost = buildResolvedCostMap(history, MC_COST, date!)
+      const rPcCost = buildResolvedCostMap(history, PC_COST, date!)
+      const rCdCost = buildResolvedCostMap(history, CD_COST, date!, CD_COL_TO_HIST_KEY)
+      const fin: Record<string, { revenue: number; profit: number }> = {}
+      for (const s of shows) {
+        const mc_ = mcMap[s.id] ?? null
+        const pc_ = pcMap[s.id] ?? null
+        const cd_ = cdMap[s.id] ?? null
+        const pk_ = pkMap[s.id] ?? null
+        const parkingExpected = pk_
+          ? calcParkingExpected(pk_.scooter_count || 0, pk_.auto_count || 0, pk_.car_count || 0)
+          : 0
+        const revenue = sumBySale(mc_, MC_PRICE) + sumBySale(pc_, PC_PRICE) + sumBySale(cd_, CD_PRICE) + parkingExpected
+        const cost = sumByCost(mc_, rMcCost) + sumByCost(pc_, rPcCost) + sumByCost(cd_, rCdCost)
+        fin[s.id] = { revenue, profit: revenue - cost }
+      }
+      setShowFinancials(fin)
     }
-    fetchTotals()
-  }, [shows])
+    fetchShowData()
+  }, [shows, theatreId, date])
+
+  const runningTotal = shows.length && Object.keys(showFinancials).length
+    ? Object.values(showFinancials).reduce((s, f) => s + f.revenue, 0)
+    : null
 
   const displayDate = date
     ? new Date(date + 'T00:00:00').toLocaleDateString('en-IN', {
@@ -410,6 +431,8 @@ export default function DayPage() {
                 yesterdayIST={yesterdayIST}
                 onEdit={e => { e.stopPropagation(); openEditForm(s) }}
                 onDelete={e => { e.stopPropagation(); handleDeleteShow(s.id) }}
+                showRevenue={showFinancials[s.id]?.revenue}
+                showProfit={showFinancials[s.id]?.profit}
               />
             </div>
           ))
