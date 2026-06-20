@@ -1,0 +1,121 @@
+[
+  {
+    "id": "efaf6de7-1507-4e64-8af5-1861648159a5",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-03",
+    "is_closed": false,
+    "created_at": "2026-06-15T15:39:50.694849+00:00"
+  },
+  {
+    "id": "e167ead3-7d1c-4701-a93f-ace9020fbf1e",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-04",
+    "is_closed": false,
+    "created_at": "2026-06-15T18:18:20.175666+00:00"
+  },
+  {
+    "id": "4c5438e9-6f13-46ed-8969-0c04a7c36005",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-16",
+    "is_closed": false,
+    "created_at": "2026-06-16T13:50:29.654496+00:00"
+  },
+  {
+    "id": "09efffa8-d4aa-4e20-9e0f-5eb28e2080cf",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-05",
+    "is_closed": false,
+    "created_at": "2026-06-16T13:51:44.234873+00:00"
+  },
+  {
+    "id": "92fa0f01-f733-48cd-aea6-1804b74359b9",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-17",
+    "is_closed": false,
+    "created_at": "2026-06-16T18:49:10.406518+00:00"
+  },
+  {
+    "id": "d45c65da-87fd-4376-aae7-82b61cdee81b",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-06",
+    "is_closed": false,
+    "created_at": "2026-06-16T18:49:55.581667+00:00"
+  },
+  {
+    "id": "4fe45984-24cc-436b-a4e6-b3028f0609e8",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-07",
+    "is_closed": false,
+    "created_at": "2026-06-16T20:04:00.79371+00:00"
+  },
+  {
+    "id": "25d7e3f7-67fd-44ec-991f-7bec429a79c2",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-08",
+    "is_closed": false,
+    "created_at": "2026-06-17T10:55:53.088483+00:00"
+  },
+  {
+    "id": "8be53453-57a9-4338-ab2a-c7c7e577ac47",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-09",
+    "is_closed": false,
+    "created_at": "2026-06-17T11:45:54.151272+00:00"
+  },
+  {
+    "id": "6da90bb0-dfd5-4cf2-a8ff-1bcc9eee41ec",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-10",
+    "is_closed": false,
+    "created_at": "2026-06-17T12:01:10.155238+00:00"
+  },
+  {
+    "id": "a8cd757e-8be4-42f2-897d-6a714df968cc",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-11",
+    "is_closed": false,
+    "created_at": "2026-06-17T12:43:55.217026+00:00"
+  },
+  {
+    "id": "86f661cf-faf9-45a2-9efd-8f60bb3ca7f8",
+    "theatre_id": "8c30caa5-b934-4732-a8d7-52ac1fd3b07a",
+    "date": "2026-06-17",
+    "is_closed": false,
+    "created_at": "2026-06-17T12:56:02.099347+00:00"
+  },
+  {
+    "id": "e53296b0-8f71-4ed7-b5ed-d5a19fffd55f",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-12",
+    "is_closed": false,
+    "created_at": "2026-06-17T12:57:01.698752+00:00"
+  },
+  {
+    "id": "e94b3b1f-b962-451f-a2c9-8062b6029034",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-18",
+    "is_closed": false,
+    "created_at": "2026-06-17T18:59:34.524076+00:00"
+  },
+  {
+    "id": "a9ce6f6b-964c-4e66-8b77-49ca458488c9",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-13",
+    "is_closed": false,
+    "created_at": "2026-06-17T19:00:40.199797+00:00"
+  },
+  {
+    "id": "65cfd7e8-3602-46da-8fc8-2e2c5dc9b1ea",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-14",
+    "is_closed": false,
+    "created_at": "2026-06-18T12:25:54.873496+00:00"
+  },
+  {
+    "id": "a8c9b0b5-ba4f-4ab5-b235-966b11db439d",
+    "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "date": "2026-06-15",
+    "is_closed": false,
+    "created_at": "2026-06-18T13:21:15.487481+00:00"
+  }
+]

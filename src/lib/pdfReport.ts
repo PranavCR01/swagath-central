@@ -1,20 +1,16 @@
 import jsPDF from 'jspdf'
 import { MC_PRICE, MC_COST, MC_NAME, PC_PRICE, PC_COST, PC_NAME, CD_PRICE, CD_COST, CD_NAME, getWastageItems } from './insightsQueries'
+import { fetchCostHistory, buildResolvedCostMap, CD_COL_TO_HIST_KEY } from './costHistory'
 import { loadSlipDataForShows } from './loadSlipData'
 import { toNum } from './utils'
 import { fmtTime, inrFmt, type ExpState, type OthersRow, type ShowSummary, type StaffRow } from '@/components/dayclose/types'
 
-const ITEM_MAPS = [
-  { price: MC_PRICE as Record<string, number>, cost: MC_COST as Record<string, number>, name: MC_NAME as Record<string, string> },
-  { price: PC_PRICE as Record<string, number>, cost: PC_COST as Record<string, number>, name: PC_NAME as Record<string, string> },
-  { price: CD_PRICE as Record<string, number>, cost: CD_COST as Record<string, number>, name: CD_NAME as Record<string, string> },
-]
-
+interface ItemMap { price: Record<string, number>; cost: Record<string, number>; name: Record<string, string> }
 interface ItemSaleRow { name: string; units: number; wst: number; revenue: number; cost: number }
 
-function itemRowsForShow(rows: (Record<string, unknown> | null)[]): ItemSaleRow[] {
+function itemRowsForShow(rows: (Record<string, unknown> | null)[], maps: ItemMap[]): ItemSaleRow[] {
   const out: ItemSaleRow[] = []
-  ITEM_MAPS.forEach(({ price, cost, name }, i) => {
+  maps.forEach(({ price, cost, name }, i) => {
     const row = rows[i]
     if (!row) return
     for (const item in price) {
@@ -28,8 +24,9 @@ function itemRowsForShow(rows: (Record<string, unknown> | null)[]): ItemSaleRow[
 }
 
 export async function generateDayReportPdf({
-  theatreName, date, showSummaries, totalSales, totalExpenses, bCash, exp, othersRows, staffRows, bmsAmount,
+  theatreId, theatreName, date, showSummaries, totalSales, totalExpenses, bCash, exp, othersRows, staffRows, bmsAmount,
 }: {
+  theatreId: string
   theatreName: string
   date: string
   showSummaries: ShowSummary[]
@@ -42,16 +39,28 @@ export async function generateDayReportPdf({
   bmsAmount: number
 }) {
   const showIds = showSummaries.map(s => s.showId)
-  const { mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows } = await loadSlipDataForShows(showIds)
+  const [{ mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows }, history] = await Promise.all([
+    loadSlipDataForShows(showIds),
+    fetchCostHistory(theatreId),
+  ])
   const mcMap = new Map(mcRows.map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
   const pcMap = new Map(pcRows.map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
   const cdMap = new Map(cdRows.map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
   const pkMap = new Map(pkRows.map(r => [(r as Record<string, unknown>).show_id as string, r as Record<string, unknown>]))
 
+  const rMcCost = buildResolvedCostMap(history, MC_COST, date)
+  const rPcCost = buildResolvedCostMap(history, PC_COST, date)
+  const rCdCost = buildResolvedCostMap(history, CD_COST, date, CD_COL_TO_HIST_KEY)
+  const resolvedMaps: ItemMap[] = [
+    { price: MC_PRICE as Record<string, number>, cost: rMcCost, name: MC_NAME as Record<string, string> },
+    { price: PC_PRICE as Record<string, number>, cost: rPcCost, name: PC_NAME as Record<string, string> },
+    { price: CD_PRICE as Record<string, number>, cost: rCdCost, name: CD_NAME as Record<string, string> },
+  ]
+
   // gross profit / cost of goods across all of today's shows
   let costOfGoods = 0
   for (const s of showSummaries) {
-    const rows = itemRowsForShow([mcMap.get(s.showId) ?? null, pcMap.get(s.showId) ?? null, cdMap.get(s.showId) ?? null])
+    const rows = itemRowsForShow([mcMap.get(s.showId) ?? null, pcMap.get(s.showId) ?? null, cdMap.get(s.showId) ?? null], resolvedMaps)
     costOfGoods += rows.reduce((sum, r) => sum + r.cost, 0)
   }
   const grossProfit = totalSales - costOfGoods
@@ -159,7 +168,7 @@ export async function generateDayReportPdf({
   sectionHdr('ITEM SALES')
   const iCols = [M, M + 60, M + 90, M + 122, M + 152, M + 178]
   for (const s of showSummaries) {
-    const itemRows = itemRowsForShow([mcMap.get(s.showId) ?? null, pcMap.get(s.showId) ?? null, cdMap.get(s.showId) ?? null])
+    const itemRows = itemRowsForShow([mcMap.get(s.showId) ?? null, pcMap.get(s.showId) ?? null, cdMap.get(s.showId) ?? null], resolvedMaps)
     if (!itemRows.length) continue
     checkPage(16)
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(30, 30, 40)
@@ -190,9 +199,9 @@ export async function generateDayReportPdf({
   const pcRowsForWastage = showSummaries.map(s => pcMap.get(s.showId) ?? null)
   const cdRowsForWastage = showSummaries.map(s => cdMap.get(s.showId) ?? null)
   const wastageItems = [
-    ...getWastageItems(mcRowsForWastage, MC_COST, MC_NAME, 'Main Counter'),
-    ...getWastageItems(pcRowsForWastage, PC_COST, PC_NAME, 'Popcorn'),
-    ...getWastageItems(cdRowsForWastage, CD_COST, CD_NAME, 'Cool Drinks'),
+    ...getWastageItems(mcRowsForWastage, rMcCost, MC_NAME, 'Main Counter'),
+    ...getWastageItems(pcRowsForWastage, rPcCost, PC_NAME, 'Popcorn'),
+    ...getWastageItems(cdRowsForWastage, rCdCost, CD_NAME, 'Cool Drinks'),
   ]
   if (wastageItems.length) {
     const wCols = [M, M + 100, M + 140]

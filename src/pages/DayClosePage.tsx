@@ -7,6 +7,7 @@ import {
 } from '@/lib/calculations'
 import { loadSlipDataForShows } from '@/lib/loadSlipData'
 import { sumBySale, sumByCost, getWastageItems, MC_PRICE, PC_PRICE, CD_DRINKS_PRICE, CD_LIVE_PRICE, MC_COST, PC_COST, CD_COST, MC_NAME, PC_NAME, CD_NAME } from '@/lib/insightsQueries'
+import { fetchCostHistory, buildResolvedCostMap, CD_COL_TO_HIST_KEY } from '@/lib/costHistory'
 import { generateDayReportPdf } from '@/lib/pdfReport'
 import { toNum } from '@/lib/utils'
 import {
@@ -98,11 +99,12 @@ export default function DayClosePage() {
       if (!shows?.length) { setLoading(false); return }
 
       const showIds = shows.map(s => s.id)
-      const [{ mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows }, expRes, swRes, othersRes] = await Promise.all([
+      const [{ mc: mcRows, pc: pcRows, cd: cdRows, parking: pkRows }, expRes, swRes, othersRes, history] = await Promise.all([
         loadSlipDataForShows(showIds),
         supabase.from('theatre_expenses').select('*').eq('day_id', day.id).maybeSingle(),
         supabase.from('theatre_staff_wages').select('id,staff_name,amount').eq('day_id', day.id),
         supabase.from('theatre_expense_others').select('*').eq('day_id', day.id),
+        fetchCostHistory(theatreId!),
       ])
 
       type McR = Record<string, unknown> & { show_id: string; upi_amount: number; cash_amount: number }
@@ -115,15 +117,20 @@ export default function DayClosePage() {
       const cdMap = Object.fromEntries((cdRows as CdR[]).map(r => [r.show_id, r]))
       const pkMap = Object.fromEntries((pkRows as PkR[]).map(r => [r.show_id, r]))
 
+      // Resolve cost maps once for this day — all shows share the same date.
+      const rMcCost = buildResolvedCostMap(history, MC_COST, date!)
+      const rPcCost = buildResolvedCostMap(history, PC_COST, date!)
+      const rCdCost = buildResolvedCostMap(history, CD_COST, date!, CD_COL_TO_HIST_KEY)
+
       const summaries: ShowSummary[] = shows.map(s => {
         const mc = mcMap[s.id], pc = pcMap[s.id], cd = cdMap[s.id], pk = pkMap[s.id]
         const mcTotal = sumBySale(mc ?? null, MC_PRICE)
         const popcornTotal = sumBySale(pc ?? null, PC_PRICE)
         const cdDrinksTotal = sumBySale(cd ?? null, CD_DRINKS_PRICE)
         const cdLiveTotal = sumBySale(cd ?? null, CD_LIVE_PRICE)
-        const mcCost = sumByCost(mc ?? null, MC_COST)
-        const pcCost = sumByCost(pc ?? null, PC_COST)
-        const cdCost = sumByCost(cd ?? null, CD_COST)
+        const mcCost = sumByCost(mc ?? null, rMcCost)
+        const pcCost = sumByCost(pc ?? null, rPcCost)
+        const cdCost = sumByCost(cd ?? null, rCdCost)
         const parkingReported = (pk?.upi_amount ?? 0) + (pk?.cash_amount ?? 0)
         const scooter = pk?.scooter_count ?? 0, auto = pk?.auto_count ?? 0, car = pk?.car_count ?? 0
         const expected = calcParkingExpected(scooter, auto, car)
@@ -150,9 +157,9 @@ export default function DayClosePage() {
       const pcRowsForWastage = shows.map(sh => pcMap[sh.id] ?? null)
       const cdRowsForWastage = shows.map(sh => cdMap[sh.id] ?? null)
       setWastageItems([
-        ...getWastageItems(mcRowsForWastage, MC_COST, MC_NAME, 'Main Counter'),
-        ...getWastageItems(pcRowsForWastage, PC_COST, PC_NAME, 'Popcorn'),
-        ...getWastageItems(cdRowsForWastage, CD_COST, CD_NAME, 'Cool Drinks'),
+        ...getWastageItems(mcRowsForWastage, rMcCost, MC_NAME, 'Main Counter'),
+        ...getWastageItems(pcRowsForWastage, rPcCost, PC_NAME, 'Popcorn'),
+        ...getWastageItems(cdRowsForWastage, rCdCost, CD_NAME, 'Cool Drinks'),
       ])
 
       // Auto-populate UPI fields from slip data — summed across all shows
@@ -318,7 +325,7 @@ export default function DayClosePage() {
 
   async function downloadDayReport() {
     await generateDayReportPdf({
-      theatreName, date: date!, showSummaries, totalSales, totalExpenses, bCash,
+      theatreId: theatreId!, theatreName, date: date!, showSummaries, totalSales, totalExpenses, bCash,
       exp, othersRows, staffRows, bmsAmount: toNum(bmsAmount),
     })
   }

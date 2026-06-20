@@ -6,6 +6,7 @@ import {
   sumBySale, dateRange, toDateStr, fetchParkingGapTrend, getWastageItems,
   fetchCateringSuggestions, type CateringSuggestions,
 } from './insightsQueries'
+import { fetchCostHistory, buildResolvedCostMap, CD_COL_TO_HIST_KEY } from './costHistory'
 
 export interface ShowSummaryLine {
   n: number
@@ -170,8 +171,16 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
   const { data: theatre } = await supabase.from('theatre_theatres').select('name').eq('id', theatreId).maybeSingle()
   const theatreName = theatre?.name ?? ''
 
-  const loaded = await loadDayShows(theatreId, date)
+  const [loaded, history] = await Promise.all([
+    loadDayShows(theatreId, date),
+    fetchCostHistory(theatreId),
+  ])
   if (!loaded || loaded.shows.length === 0) return null
+
+  const rMcCost = buildResolvedCostMap(history, MC_COST, date)
+  const rPcCost = buildResolvedCostMap(history, PC_COST, date)
+  const rCdCost = buildResolvedCostMap(history, CD_COST, date, CD_COL_TO_HIST_KEY)
+  const resolvedCostByPrefix: Record<string, Record<string, number>> = { mc: rMcCost, pc: rPcCost, cd: rCdCost }
 
   const shows: ShowSummaryLine[] = []
   let mainCounterTotal = 0, popcornTotal = 0, coolDrinksTotal = 0
@@ -202,7 +211,8 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
       occ: s.occupancy, revenue: computeShowTotal(mcTotal, pcTotal, cdTotal, reported),
     })
 
-    for (const { prefix, price, cost, name, table } of ALL_PRICE_MAPS) {
+    for (const { prefix, price, name, table } of ALL_PRICE_MAPS) {
+      const resolvedCost = resolvedCostByPrefix[prefix]
       const row = table === 'mc' ? s.mc : table === 'pc' ? s.pc : s.cd
       for (const item in price) {
         const qty = Number(row?.[`${item}_sale`]) || 0
@@ -211,7 +221,7 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
         const cur = todayItems.get(key) ?? { name: name[item], units: 0, revenue: 0, cost: 0 }
         cur.units += qty
         cur.revenue += qty * price[item]
-        cur.cost += qty * (cost[item] ?? 0)
+        cur.cost += qty * (resolvedCost[item] ?? 0)
         todayItems.set(key, cur)
       }
       if (table === 'pc') {
@@ -238,9 +248,9 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
   const pcRows = loaded.shows.map(s => s.pc)
   const cdRows = loaded.shows.map(s => s.cd)
   const wastageItems = [
-    ...getWastageItems(mcRows, MC_COST, MC_NAME, 'Main Counter'),
-    ...getWastageItems(pcRows, PC_COST, PC_NAME, 'Popcorn'),
-    ...getWastageItems(cdRows, CD_COST, CD_NAME, 'Cool Drinks'),
+    ...getWastageItems(mcRows, rMcCost, MC_NAME, 'Main Counter'),
+    ...getWastageItems(pcRows, rPcCost, PC_NAME, 'Popcorn'),
+    ...getWastageItems(cdRows, rCdCost, CD_NAME, 'Cool Drinks'),
   ].sort((a, b) => b.cost - a.cost)
   const totalWastageCost = wastageItems.reduce((s, w) => s + w.cost, 0)
 

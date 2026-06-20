@@ -1,0 +1,55 @@
+{
+  "capturedAt": "2026-06-18T16:26:56.052Z",
+  "files": [
+    {
+      "table": "theatre_theatres",
+      "rows": 2,
+      "sizeKB": 0.4
+    },
+    {
+      "table": "theatre_days",
+      "rows": 17,
+      "sizeKB": 3.7
+    },
+    {
+      "table": "theatre_shows",
+      "rows": 62,
+      "sizeKB": 30.7
+    },
+    {
+      "table": "theatre_main_counter",
+      "rows": 61,
+      "sizeKB": 116.1
+    },
+    {
+      "table": "theatre_popcorn",
+      "rows": 61,
+      "sizeKB": 35.3
+    },
+    {
+      "table": "theatre_cool_drinks",
+      "rows": 61,
+      "sizeKB": 133.4
+    },
+    {
+      "table": "theatre_parking",
+      "rows": 61,
+      "sizeKB": 16.7
+    },
+    {
+      "table": "theatre_expenses",
+      "rows": 11,
+      "sizeKB": 6.9
+    },
+    {
+      "table": "theatre_expense_others",
+      "rows": 0,
+      "sizeKB": 0
+    },
+    {
+      "table": "theatre_staff_wages",
+      "rows": 0,
+      "sizeKB": 0
+    }
+  ]
+}

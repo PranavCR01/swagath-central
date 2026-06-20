@@ -1,0 +1,16 @@
+[
+  {
+    "id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+    "name": "Sandhya",
+    "owner_id": "8e131c1d-da54-4816-93da-562b8b5bf041",
+    "created_at": "2026-04-22T19:13:42.083706+00:00",
+    "capacity": 714
+  },
+  {
+    "id": "8c30caa5-b934-4732-a8d7-52ac1fd3b07a",
+    "name": "Manasa",
+    "owner_id": "8e131c1d-da54-4816-93da-562b8b5bf041",
+    "created_at": "2026-04-22T19:13:42.083706+00:00",
+    "capacity": 524
+  }
+]

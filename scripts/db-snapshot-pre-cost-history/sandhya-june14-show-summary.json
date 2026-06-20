@@ -1,0 +1,74 @@
+{
+  "date": "2026-06-14",
+  "theatre": "Sandhya",
+  "theatre_id": "628dba7b-322c-4afe-a8ea-d3cf8e40cbc1",
+  "shows": [
+    {
+      "show": 1,
+      "time": "10:00:00",
+      "movie": "Surya S/O Krishnan",
+      "MC": 3660,
+      "POP": 3220,
+      "CDS": 4180,
+      "Parking": 1130,
+      "showTotal": 12190,
+      "showProfit": 8130,
+      "costOfGoods": 4060
+    },
+    {
+      "show": 2,
+      "time": "13:20:00",
+      "movie": "Sing Geetham",
+      "MC": 6550,
+      "POP": 5140,
+      "CDS": 4670,
+      "Parking": 1580,
+      "showTotal": 17940,
+      "showProfit": 12089,
+      "costOfGoods": 5851
+    },
+    {
+      "show": 3,
+      "time": "15:45:00",
+      "movie": "PEDDI",
+      "MC": 10170,
+      "POP": 10300,
+      "CDS": 8940,
+      "Parking": 2600,
+      "showTotal": 32010,
+      "showProfit": 21734,
+      "costOfGoods": 10276
+    },
+    {
+      "show": 4,
+      "time": "19:15:00",
+      "movie": "Sing Geetham",
+      "MC": 6240,
+      "POP": 9680,
+      "CDS": 5320,
+      "Parking": 1880,
+      "showTotal": 23120,
+      "showProfit": 16083,
+      "costOfGoods": 7037
+    },
+    {
+      "show": 5,
+      "time": "22:00:00",
+      "movie": "PEDDI",
+      "MC": 1940,
+      "POP": 1320,
+      "CDS": 0,
+      "Parking": 460,
+      "showTotal": 3720,
+      "showProfit": 2634,
+      "costOfGoods": 1086
+    }
+  ],
+  "totals": {
+    "grossRevenue": 88980,
+    "grossProfit": 60670,
+    "totalExpenses": 0,
+    "netProfit": 60670
+  },
+  "capturedAt": "2026-06-18T16:26:57.607Z"
+}

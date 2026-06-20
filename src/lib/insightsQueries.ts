@@ -3,6 +3,7 @@ import { PRICES, COSTS } from './prices'
 import { calcParkingExpected } from './calculations'
 import { safeIn } from './utils'
 import { loadSlipDataForShows } from './loadSlipData'
+import { fetchCostHistory, buildResolvedCostMap, CD_COL_TO_HIST_KEY } from './costHistory'
 
 // ── DB column prefix -> price/cost/display-name maps ──────────────────────
 export const MC_PRICE: Record<string, number> = {
@@ -175,6 +176,9 @@ async function loadShowAggregates(theatreId: string, dates: string[]): Promise<S
   const cdMap = new Map((cdRows ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
   const pkMap = new Map((pkRows ?? []).map(r => [r.show_id as string, r as Record<string, unknown>]))
 
+  // Fetch cost history once for the theatre; resolve per show using the show's own date.
+  const history = await fetchCostHistory(theatreId)
+
   return shows.map(s => {
     const showId = s.id as string
     const mc = mcMap.get(showId) ?? null
@@ -190,13 +194,16 @@ async function loadShowAggregates(theatreId: string, dates: string[]): Promise<S
       ? calcParkingExpected(Number(pk.scooter_count) || 0, Number(pk.auto_count) || 0, Number(pk.car_count) || 0)
       : 0
     const revenue = mcRev + pcRev + cdRev + parkingReported
-    const cost = sumByCost(mc, MC_COST) + sumByCost(pc, PC_COST) + sumByCost(cd, CD_COST)
+    const showDate = dayMap.get(s.day_id as string) ?? ''
+    const cost = sumByCost(mc, buildResolvedCostMap(history, MC_COST, showDate))
+      + sumByCost(pc, buildResolvedCostMap(history, PC_COST, showDate))
+      + sumByCost(cd, buildResolvedCostMap(history, CD_COST, showDate, CD_COL_TO_HIST_KEY))
     const profit = revenue - cost
 
     return {
       showId,
       dayId: s.day_id as string,
-      date: dayMap.get(s.day_id as string) ?? '',
+      date: showDate,
       showNumber: s.show_number as number,
       occupancy: Number(s.occupancy_pct) || 0,
       revenue,
@@ -330,6 +337,8 @@ export async function fetchTopItems(theatreId: string | 'both', days: number): P
       supabase.from('theatre_cool_drinks').select('*').in('show_id', safeIn(showIds)),
     ])
 
+    // TODO: uses static COSTS, not effective-dated — Top Items profit margins may be slightly
+    // stale for items with historical cost changes. Needs per-row date context to fix properly.
     for (const row of mcRows ?? []) {
       for (const prefix in MC_PRICE) {
         addItem(`mc_${prefix}`, Number((row as Record<string, unknown>)[`${prefix}_sale`]) || 0, MC_PRICE[prefix], MC_COST[prefix])
