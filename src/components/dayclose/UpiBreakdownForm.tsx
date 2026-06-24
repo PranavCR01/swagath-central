@@ -21,6 +21,7 @@ export default function UpiBreakdownForm({
           ['Main Counter UPI', upi.mcUpi, 'mcUpi'],
           ['Cool Drink UPI', upi.cdUpi, 'cdUpi'],
           ['Live Counter UPI', upi.lcUpi, 'lcUpi'],
+          ['BMS UPI', upi.bmsUpi, 'bmsUpi'],
           ['Parking UPI', upi.parkingUpi, 'parkingUpi'],
         ] as const).map(([label, val, key]) => (
           <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>

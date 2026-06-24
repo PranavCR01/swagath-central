@@ -43,7 +43,6 @@ export default function DayClosePage() {
   const [exp, setExp] = useState<ExpState>(emptyExp)
   const [othersRows, setOthersRows] = useState<OthersRow[]>([{ tempId: crypto.randomUUID(), description: '', amount: '' }])
   const [staffRows, setStaffRows] = useState<StaffRow[]>([])
-  const [bmsAmount, setBmsAmount] = useState('')
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
   const [isSaved, setIsSaved] = useState(false)
@@ -56,9 +55,8 @@ export default function DayClosePage() {
   const totalSales = computeDayTotal(showSummaries.map(s => s.showTotal))
   const totalProfit = showSummaries.reduce((s, v) => s + v.showProfit, 0)
   const costOfGoods = totalSales - totalProfit
-  const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.parkingUpi)
+  const totalUpi = toNum(upi.popcornUpi) + toNum(upi.mcUpi) + toNum(upi.cdUpi) + toNum(upi.lcUpi) + toNum(upi.bmsUpi) + toNum(upi.parkingUpi)
   const totalCash = [cash.popcornCash, cash.mcCash, cash.cdCash, cash.lcCash, cash.parkingCash].reduce((s, v) => s + toNum(v), 0)
-  const totalCollected = totalUpi + totalCash + toNum(bmsAmount)
   const othersTotal = othersRows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const expObj = {
     wages: toNum(exp.wages),
@@ -204,9 +202,9 @@ export default function DayClosePage() {
           popcornUpi:  sv('popcorn_upi',      autoPopcornUpi),
           cdUpi:       sv('cool_drink_upi',   autoCdUpi),
           lcUpi:       sv('live_counter_upi', autoLcUpi),
+          bmsUpi:      sv('bms_amount',       autoBmsAmount),
           parkingUpi:  sv('parking_upi',      autoParkingUpi),
         })
-        setBmsAmount(sv('bms_amount', autoBmsAmount))
         setCash({
           mcCash:      sv('main_counter_cash', autoMcCash),
           popcornCash: sv('popcorn_cash',      autoPopcornCash),
@@ -221,9 +219,9 @@ export default function DayClosePage() {
           popcornUpi: autoPopcornUpi > 0 ? String(autoPopcornUpi) : '',
           cdUpi:      autoCdUpi      > 0 ? String(autoCdUpi)      : '',
           lcUpi:      autoLcUpi      > 0 ? String(autoLcUpi)      : '',
+          bmsUpi:     autoBmsAmount  > 0 ? String(autoBmsAmount)  : '',
           parkingUpi: autoParkingUpi > 0 ? String(autoParkingUpi) : '',
         })
-        setBmsAmount(autoBmsAmount > 0 ? String(autoBmsAmount) : '')
         setCash({
           mcCash:      autoMcCash      > 0 ? String(autoMcCash)      : '',
           popcornCash: autoPopcornCash > 0 ? String(autoPopcornCash) : '',
@@ -261,7 +259,7 @@ export default function DayClosePage() {
       main_counter_upi: toNum(upi.mcUpi),
       cool_drink_upi: toNum(upi.cdUpi),
       live_counter_upi: toNum(upi.lcUpi),
-      bms_amount: toNum(bmsAmount),
+      bms_amount: toNum(upi.bmsUpi),
       parking_upi: toNum(upi.parkingUpi),
       popcorn_cash: toNum(cash.popcornCash),
       main_counter_cash: toNum(cash.mcCash),
@@ -327,7 +325,7 @@ export default function DayClosePage() {
   async function downloadDayReport() {
     await generateDayReportPdf({
       theatreId: theatreId!, theatreName, date: date!, showSummaries, totalSales, totalExpenses, bCash,
-      exp, othersRows, staffRows, bmsAmount: toNum(bmsAmount),
+      exp, othersRows, staffRows, bmsAmount: toNum(upi.bmsUpi),
     })
   }
 
@@ -433,46 +431,6 @@ export default function DayClosePage() {
               </span>
             </div>
           )}
-        </div>
-
-        <div style={{
-          background: 'var(--surface)', borderRadius: 'var(--r-card)',
-          border: '1px solid var(--card-border)', marginTop: 16, marginBottom: 20, padding: '14px 14px 12px',
-        }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: 'var(--muted)',
-            letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10,
-          }}>
-            COLLECTED
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: 'var(--muted)' }}>UPI</span>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
-              ₹{inrFmt.format(totalUpi)}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Cash</span>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
-              ₹{inrFmt.format(totalCash)}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: 'var(--muted)' }}>BMS</span>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text)' }}>
-              ₹{inrFmt.format(toNum(bmsAmount))}
-            </span>
-          </div>
-          <div style={{ height: 1, background: 'var(--card-border)', marginBottom: 8 }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Total</span>
-            <span style={{
-              fontFamily: 'var(--mono)', fontSize: 20, fontWeight: 700,
-              color: 'var(--accent)',
-            }}>
-              ₹{inrFmt.format(totalCollected)}
-            </span>
-          </div>
         </div>
 
         <div style={{
