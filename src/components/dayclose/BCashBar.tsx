@@ -1,10 +1,10 @@
 import { inrFmt } from './types'
 
 export default function BCashBar({
-  totalSales, totalExpenses, bCash,
+  totalSales, totalUpi, bCash,
 }: {
   totalSales: number
-  totalExpenses: number
+  totalUpi: number
   bCash: number
 }) {
   return (
@@ -20,12 +20,9 @@ export default function BCashBar({
         </span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 13, color: 'var(--muted)' }}>Total Expenses</span>
-        <span style={{
-          fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 600,
-          color: totalExpenses > totalSales ? 'var(--red)' : 'var(--text)',
-        }}>
-          ₹{inrFmt.format(totalExpenses)}
+        <span style={{ fontSize: 13, color: 'var(--muted)' }}>Digital (UPI + BMS)</span>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+          ₹{inrFmt.format(totalUpi)}
         </span>
       </div>
       <div style={{ height: 1, background: 'var(--card-border)', marginBottom: 8 }} />

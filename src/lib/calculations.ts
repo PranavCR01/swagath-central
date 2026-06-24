@@ -42,18 +42,7 @@ export function computeDayTotal(showTotals: number[]): number {
   return showTotals.reduce((s, t) => s + t, 0)
 }
 
-// B.Cash = total sales minus all expense fields.
-// theatre_expenses.wages is the sole wages figure — do NOT add theatre_staff_wages
-// totals separately; that would double-count the same money.
-export function computeBCash(
-  totalSales: number,
-  expenses: {
-    wages: number; staff_coffee: number; water_cans: number;
-    lab_food: number; wastage: number; others_amount: number
-  }
-): number {
-  return totalSales - (
-    expenses.wages + expenses.staff_coffee + expenses.water_cans +
-    expenses.lab_food + expenses.wastage + expenses.others_amount
-  )
+// B.Cash = physical cash collected today = Total Sales minus all digital (UPI + BMS) payments.
+export function computeBCash(totalSales: number, totalUpi: number): number {
+  return totalSales - totalUpi
 }

@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { calcParkingExpected, calcParkingGap, computeShowTotal, computeBCash } from './calculations'
+import { calcParkingExpected, calcParkingGap, computeShowTotal } from './calculations'
 import { loadSlipDataForShows } from './loadSlipData'
 import {
   MC_PRICE, MC_NAME, MC_COST, PC_PRICE, PC_NAME, PC_COST, CD_PRICE, CD_NAME, CD_COST,
@@ -301,7 +301,11 @@ export async function buildDaySummary(theatreId: string, date: string): Promise<
     others_amount: othersTotal,
   }
   const expenses = Object.values(expObj).reduce((s, v) => s + v, 0)
-  const bCash = computeBCash(totalSales, expObj)
+  // B.Cash = physical cash collected = Total Sales minus all digital (UPI + BMS) payments
+  const totalUpiFromExp = (Number(e.popcorn_upi) || 0) + (Number(e.main_counter_upi) || 0) +
+    (Number(e.cool_drink_upi) || 0) + (Number(e.live_counter_upi) || 0) +
+    (Number(e.bms_amount) || 0) + (Number(e.parking_upi) || 0)
+  const bCash = totalSales - totalUpiFromExp
 
   // vs yesterday
   const yesterday = toDateStr(new Date(new Date(date + 'T00:00:00').getTime() - 86400000))

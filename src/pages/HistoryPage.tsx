@@ -57,7 +57,7 @@ async function buildHistoryRows(
   // Wave 1: shows + expenses + per-theatre gross profit — all parallel, no cross-dependencies
   const [showsRes, expRes, othersRes, allAggs] = await Promise.all([
     supabase.from('theatre_shows').select('id,day_id').in('day_id', safeIn(dayIds)),
-    supabase.from('theatre_expenses').select('day_id,wages,staff_coffee,water_cans,lab_food,wastage').in('day_id', safeIn(dayIds)),
+    supabase.from('theatre_expenses').select('day_id,wages,staff_coffee,water_cans,lab_food,wastage,popcorn_upi,main_counter_upi,cool_drink_upi,live_counter_upi,bms_amount,parking_upi').in('day_id', safeIn(dayIds)),
     supabase.from('theatre_expense_others').select('day_id,amount').in('day_id', safeIn(dayIds)),
     Promise.all(
       Array.from(theatreDatesMap.entries()).map(([tid, tdates]) => loadShowAggregates(tid, tdates))
@@ -110,12 +110,17 @@ async function buildHistoryRows(
   const closedDays = new Set<string>()
   const bCashMap: Record<string, number> = {}
   const totalExpByDay: Record<string, number> = {}
-  type ExpR = { day_id: string; wages: number; staff_coffee: number; water_cans: number; lab_food: number; wastage: number }
+  type ExpR = {
+    day_id: string; wages: number; staff_coffee: number; water_cans: number; lab_food: number; wastage: number
+    popcorn_upi: number; main_counter_upi: number; cool_drink_upi: number; live_counter_upi: number; bms_amount: number; parking_upi: number
+  }
   for (const e of (expRes.data ?? []) as ExpR[]) {
     closedDays.add(e.day_id)
     const totalExp = (e.wages || 0) + (e.staff_coffee || 0) + (e.water_cans || 0) +
       (e.lab_food || 0) + (e.wastage || 0) + (othersSumPerDay[e.day_id] ?? 0)
-    bCashMap[e.day_id] = (totalsPerDay[e.day_id] ?? 0) - totalExp
+    const totalUpiExp = (e.popcorn_upi || 0) + (e.main_counter_upi || 0) + (e.cool_drink_upi || 0) +
+      (e.live_counter_upi || 0) + (e.bms_amount || 0) + (e.parking_upi || 0)
+    bCashMap[e.day_id] = (totalsPerDay[e.day_id] ?? 0) - totalUpiExp
     totalExpByDay[e.day_id] = totalExp
   }
 

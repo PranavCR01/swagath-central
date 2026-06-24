@@ -123,7 +123,7 @@ Revenue: ${rupee(total)}
 Gross Profit: ${rupee(d.grossProfit)} (${d.profitMargin}% margin)
 Expenses: ${rupee(d.expenses)}
 Net Profit: ${rupee(d.grossProfit - d.expenses)}
-Balance Cash: ${rupee(d.bCash)}
+Physical Cash Collected: ${rupee(d.bCash)} (Total Sales minus UPI and BMS digital payments)
 
 ${vsYesterdayLine}
 

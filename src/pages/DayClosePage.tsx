@@ -68,8 +68,8 @@ export default function DayClosePage() {
   }
   const totalExpenses = Object.values(expObj).reduce((s, v) => s + v, 0)
   const netProfit = totalProfit - totalExpenses
-  // B.Cash uses theatre_expenses.wages only — staff wage rows are breakdown only, not additive
-  const bCash = computeBCash(totalSales, expObj)
+  // B.Cash = physical cash collected = Total Sales minus all digital UPI/BMS payments (totalUpi already includes bmsUpi)
+  const bCash = computeBCash(totalSales, totalUpi)
   const staffWagesTotal = staffRows.reduce((s, r) => s + toNum(r.amount), 0)
 
   function addOthersRow() { setOthersRows(rs => [...rs, { tempId: crypto.randomUUID(), description: '', amount: '' }]) }
@@ -486,7 +486,7 @@ export default function DayClosePage() {
         />
       </div>
 
-      <BCashBar totalSales={totalSales} totalExpenses={totalExpenses} bCash={bCash} />
+      <BCashBar totalSales={totalSales} totalUpi={totalUpi} bCash={bCash} />
     </div>
   )
 }
